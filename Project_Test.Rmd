@@ -1,0 +1,81 @@
+---
+title: "Project Test"
+author: "Joan Moreaux"
+date: "07/11/2021"
+output: html_document
+---
+
+```{r, warning=FALSE, message=FALSE}
+library(FSA) 
+library(fGarch)
+library(LambertW)
+library(tidyverse)
+```
+
+```{r}
+health_data <- read.csv("Big_Data_Green.csv")
+heat_data <- read.csv("Heat_Data.csv")
+```
+
+## Health Data
+Includes feeding time, PAM measurements, base measurements, and symbiont density 
+
+```{r}
+health_data <- health_data %>% 
+  mutate(PAM_avg = (Fv_Fm_1 + Fv_Fm_2 + Fv_Fm_3)/3) %>% 
+  mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Event = as.factor(Event), 
+         Field_Site = as.factor(Field_Site)) %>% 
+  mutate(Base_Diameter_mm = (Base_Width + Base_Length + Base_Diagonal)/3)
+```
+
+**PAM Graph**
+```{r}
+PAM_data <- health_data %>% 
+  filter(Event == "Acclimation_End" | Event == "Heat_End") %>%
+  drop_na(PAM_avg)
+
+shapiro.test(PAM_data$PAM_avg) # p-value < 0.05, distribution is not normal
+bartlett.test(PAM_avg ~ Treatment, data = PAM_data) # p-value < 0.05, does not meet equal variance assumptions
+```
+
+```{r}
+ggplot(PAM_data, aes(x = Event, y = PAM_avg)) +
+  geom_boxplot() +
+  facet_grid(. ~ Treatment) +
+  theme_test()
+```
+
+```{r}
+PAM_anova <- aov(PAM_avg ~ Treatment, data = PAM_data)
+summary(PAM_anova) # p-value < 0.05
+```
+
+```{r}
+kruskal.test(PAM_avg ~ Treatment, data = PAM_data) # p-value < 0.05
+dunnTest(PAM_avg ~ Treatment, data = PAM_data)
+```
+
+**Size Graph**
+```{r}
+size_data <- health_data %>% 
+  filter(Event == "Acclimation_End" | Event == "Heat_End") %>% 
+  drop_na(Base_Diameter_mm)
+
+size_anova <- aov(Base_Diameter_mm ~ Treatment, data = size_data)
+summary(size_anova)
+```
+
+```{r}
+ggplot(size_data, aes(x = Date, y = Base_Diameter_mm)) +
+  geom_boxplot()
+```
+
+## Heat Data
+Includes temperature during heatwave and behabiroual responses (open vs closed)
+
+```{r}
+heat_data <- heat_data %>% 
+   mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Field_Site = as.factor(Field_Site))
+```
+
+
