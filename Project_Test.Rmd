@@ -58,16 +58,17 @@ dunnTest(PAM_avg ~ Treatment, data = PAM_data)
 **Size Graph**
 ```{r}
 size_data <- health_data %>% 
-  filter(Event == "Acclimation_End" | Event == "Heat_End") %>% 
+  filter(Date == "11/5/2021" | Date == "11/9/2021") %>% 
   drop_na(Base_Diameter_mm)
 
-size_anova <- aov(Base_Diameter_mm ~ Treatment, data = size_data)
-summary(size_anova)
+shapiro.test(size_data$Base_Diameter_mm) # p-value < 0.05, distribution is not normal
+bartlett.test(PAM_avg ~ Treatment, data = size_data) # p-value < 0.05, does not meet equal variance assumptions
 ```
 
 ```{r}
-ggplot(size_data, aes(x = Date, y = Base_Diameter_mm)) +
-  geom_boxplot()
+ggplot(size_data, aes(x = Treatment, y = Base_Diameter_mm)) +
+  geom_boxplot() +
+  theme_test()
 ```
 
 ## Heat Data
@@ -75,7 +76,21 @@ Includes temperature during heatwave and behabiroual responses (open vs closed)
 
 ```{r}
 heat_data <- heat_data %>% 
-   mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Field_Site = as.factor(Field_Site))
+  mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Field_Site = as.factor(Field_Site)) %>% 
+  group_by(Date, Treatment, Time_Block) %>% 
+  mutate(Temp_avg = mean(Bucket_Temp)) 
 ```
 
+```{r}
+ggplot(data = heat_data, aes(x = Time_Block, y = Temp_avg, color = Date)) +
+  geom_point() +
+  geom_line() +
+  facet_grid(. ~ Treatment) +
+  theme_test()
+```
+
+```{r}
+ggplot(data = heat_data, aes(x = Time_Block, y = Open_Closed, fill = Open_Closed)) + 
+    geom_bar(position="fill", stat="identity")
+```
 
