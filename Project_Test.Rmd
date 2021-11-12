@@ -94,3 +94,4 @@ ggplot(data = heat_data, aes(x = Time_Block, y = Open_Closed, fill = Open_Closed
     geom_bar(position="fill", stat="identity")
 ```
 
+Hello
