@@ -139,6 +139,8 @@ open_closed_data <- heat_data %>%
 
 ggplot(data = open_closed_data, aes(x = Time_Block, y = n, fill = Open_Closed)) + 
   geom_bar(position="fill", stat="identity") +
-  theme_test()
+  facet_grid(. ~ Treatment) +
+  scale_fill_brewer(palette = "Reds")
+  theme_classic()
 ```
 
