@@ -2,9 +2,9 @@ Date,Day,Species_ID,Field_Site,Treatment,Bucket,Time_Block,Time,Bucket_Temp,Out_
 11/6/2021,1,G7F,Forshore,Control,I,0,9:52,12,12,O
 11/6/2021,1,G17S,Scotts,Control,I,0,9:52,12,12,O
 11/6/2021,1,G27B,Bluestone,Control,I,0,9:52,12,12,O
-11/6/2021,1,G16S,Scotts,Control,J,0,9:52,12,12,C
+11/6/2021,1,G16S,Scotts,Control,J,0,9:52,12,12,O
 11/6/2021,1,G25S,Scotts,Control,J,0,9:52,12,12,O
-11/6/2021,1,G29B,Bluestone,Control,J,0,9:52,12,12,P
+11/6/2021,1,G29B,Bluestone,Control,J,0,9:52,12,12,O
 11/6/2021,1,G10F,Forshore,Control,K,0,9:52,12,12,O
 11/6/2021,1,G12F,Forshore,Control,K,0,9:52,12,12,O
 11/6/2021,1,G20S,Scotts,Control,K,0,9:52,12,12,O
@@ -275,7 +275,7 @@ Date,Day,Species_ID,Field_Site,Treatment,Bucket,Time_Block,Time,Bucket_Temp,Out_
 11/7/2021,2,G4F,Forshore,25C,D,0,9:31,12,13,O
 11/7/2021,2,G35B,Bluestone,25C,D,0,9:31,12,13,P
 11/7/2021,2,G22S,Scotts,25C,D,0,9:31,12,13,O
-11/7/2021,2,G1F,Forshore,30C,E,0,10:31,12,13,O 
+11/7/2021,2,G1F,Forshore,30C,E,0,10:31,12,13,O
 11/7/2021,2,G15S,Scotts,30C,E,0,10:31,12,13,P
 11/7/2021,2,G37B,Bluestone,30C,E,0,10:31,12,13,P
 11/7/2021,2,G38B,Bluestone,30C,F,0,10:31,12,13,O

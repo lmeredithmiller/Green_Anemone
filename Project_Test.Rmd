@@ -6,6 +6,11 @@ output: html_document
 ---
 
 ```{r, warning=FALSE, message=FALSE}
+library(DHARMa)
+library(mgcv)
+library(fitdistrplus)
+library(goft)
+library(gamlss)
 library(FSA) 
 library(fGarch)
 library(LambertW)
@@ -28,7 +33,7 @@ health_data <- health_data %>%
   mutate(Base_Diameter_mm = (Base_Width + Base_Length + Base_Diagonal)/3)
 ```
 
-**PAM Graph**
+### PAM data
 ```{r}
 PAM_data <- health_data %>% 
   filter(Event == "Acclimation_End" | Event == "Heat_End") %>%
@@ -38,6 +43,7 @@ shapiro.test(PAM_data$PAM_avg) # p-value < 0.05, distribution is not normal
 bartlett.test(PAM_avg ~ Treatment, data = PAM_data) # p-value < 0.05, does not meet equal variance assumptions
 ```
 
+**PAM Graph**
 ```{r}
 ggplot(PAM_data, aes(x = Event, y = PAM_avg)) +
   geom_boxplot() +
@@ -45,17 +51,7 @@ ggplot(PAM_data, aes(x = Event, y = PAM_avg)) +
   theme_test()
 ```
 
-```{r}
-PAM_anova <- aov(PAM_avg ~ Treatment, data = PAM_data)
-summary(PAM_anova) # p-value < 0.05
-```
-
-```{r}
-kruskal.test(PAM_avg ~ Treatment, data = PAM_data) # p-value < 0.05
-dunnTest(PAM_avg ~ Treatment, data = PAM_data)
-```
-
-**Size Graph**
+### Size Data
 ```{r}
 size_data <- health_data %>% 
   filter(Date == "11/5/2021" | Date == "11/9/2021") %>% 
@@ -65,6 +61,7 @@ shapiro.test(size_data$Base_Diameter_mm) # p-value < 0.05, distribution is not n
 bartlett.test(PAM_avg ~ Treatment, data = size_data) # p-value < 0.05, does not meet equal variance assumptions
 ```
 
+**Size Graph**
 ```{r}
 ggplot(size_data, aes(x = Treatment, y = Base_Diameter_mm)) +
   geom_boxplot() +
@@ -78,7 +75,7 @@ Includes temperature during heatwave and behabiroual responses (open vs closed)
 heat_data <- heat_data %>% 
   mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Field_Site = as.factor(Field_Site)) %>% 
   group_by(Date, Treatment, Time_Block) %>% 
-  mutate(Temp_avg = mean(Bucket_Temp)) 
+  mutate(Temp_avg = mean(Bucket_Temp))
 ```
 
 ```{r}
@@ -90,8 +87,12 @@ ggplot(data = heat_data, aes(x = Time_Block, y = Temp_avg, color = Date)) +
 ```
 
 ```{r}
-ggplot(data = heat_data, aes(x = Time_Block, y = Open_Closed, fill = Open_Closed)) + 
-    geom_bar(position="fill", stat="identity")
+open_closed_data <- heat_data %>% 
+  group_by(Day, Treatment, Time_Block) %>% 
+  count(Open_Closed)
+
+ggplot(data = open_closed_data, aes(x = Time_Block, y = n, fill = Open_Closed)) + 
+  geom_bar(position="fill", stat="identity") +
+  theme_test()
 ```
 
-Hello
