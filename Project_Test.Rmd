@@ -27,25 +27,72 @@ Includes feeding time, PAM measurements, base measurements, and symbiont density
 
 ```{r}
 health_data <- health_data %>% 
-  mutate(PAM_avg = (Fv_Fm_1 + Fv_Fm_2 + Fv_Fm_3)/3) %>% 
+  mutate(Fv_Fm_1 = as.numeric(Fv_Fm_1), PAM_avg = ((Fv_Fm_1 + Fv_Fm_2 + Fv_Fm_3)/3)) %>% 
+  mutate(Green_Density = (Green_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_g)) %>% 
+  mutate(Dino_Density = (Dino_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_g)) %>% 
+  mutate(Base_Diameter_mm = (Base_Width + Base_Length + Base_Diagonal)/3) %>% 
   mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Event = as.factor(Event), 
-         Field_Site = as.factor(Field_Site)) %>% 
-  mutate(Base_Diameter_mm = (Base_Width + Base_Length + Base_Diagonal)/3)
+         Field_Site = as.factor(Field_Site))
 ```
 
 ### PAM data
 ```{r}
-PAM_data <- health_data %>% 
-  filter(Event == "Acclimation_End" | Event == "Heat_End") %>%
+PAM_data <- health_data %>%
   drop_na(PAM_avg)
 
 shapiro.test(PAM_data$PAM_avg) # p-value < 0.05, distribution is not normal
 bartlett.test(PAM_avg ~ Treatment, data = PAM_data) # p-value < 0.05, does not meet equal variance assumptions
 ```
 
+Checking distribution:
+If we get get a p-value < 0.5, then they are significantly different and we should not test
+```{r}
+exp_test(PAM_data$PAM_avg)        #p-value < 2.2e-16, cannot use
+gamma_test(PAM_data$PAM_avg)      #p-value < 2.2e-16, cannot use
+lnorm_test(PAM_data$PAM_avg)      #p-value < 2.2e-16, cannot use
+normal_test(PAM_data$PAM_avg)     #p-value = 5.414e-08, cannot use
+weibull_test(PAM_data$PAM_avg)    #p-value < 2.2e-16, cannot use
+```
+
 **PAM Graph**
 ```{r}
-ggplot(PAM_data, aes(x = Event, y = PAM_avg)) +
+PAM_data_plot <- PAM_data %>% 
+  filter(Event_True == "Acclimation_End" | Event_True == "Heat_End" | Event_True == "Recovery_End")
+
+ggplot(PAM_data_plot, aes(x = Treatment, y = PAM_avg)) +
+  geom_boxplot() +
+  facet_grid(. ~ Event_True) +
+  theme_test()
+```
+
+```{r}
+PAM_data_end <- health_data %>% 
+  filter(Event_True == "Heat_End") %>% 
+  drop_na(PAM_avg)
+```
+
+```{r}
+ggplot(PAM_data_end, aes(x = Treatment, y = PAM_avg)) +
+  geom_boxplot() +
+  theme_test()
+```
+
+
+### Symbiont Data
+```{r}
+Density_Data <- health_data %>%
+  drop_na(Green_Density, Dino_Density)
+```
+
+```{r}
+ggplot(Density_Data, aes(x = Date, y = Green_Density)) +
+  geom_boxplot() +
+  facet_grid(. ~ Treatment) +
+  theme_test()
+```
+
+```{r}
+ggplot(Density_Data, aes(x = Date, y = Dino_Density)) +
   geom_boxplot() +
   facet_grid(. ~ Treatment) +
   theme_test()
@@ -54,7 +101,6 @@ ggplot(PAM_data, aes(x = Event, y = PAM_avg)) +
 ### Size Data
 ```{r}
 size_data <- health_data %>% 
-  filter(Date == "11/5/2021" | Date == "11/9/2021") %>% 
   drop_na(Base_Diameter_mm)
 
 shapiro.test(size_data$Base_Diameter_mm) # p-value < 0.05, distribution is not normal
