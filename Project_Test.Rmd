@@ -14,6 +14,7 @@ library(gamlss)
 library(FSA) 
 library(fGarch)
 library(LambertW)
+library(ordinal)
 library(tidyverse)
 ```
 
@@ -28,9 +29,9 @@ Includes feeding time, PAM measurements, base measurements, and symbiont density
 ```{r}
 health_data <- health_data %>% 
   mutate(Fv_Fm_1 = as.numeric(Fv_Fm_1), PAM_avg = ((Fv_Fm_1 + Fv_Fm_2 + Fv_Fm_3)/3)) %>% 
+  mutate(Base_Diameter_mm = (Base_Width + Base_Length + Base_Diagonal)/3) %>%
   mutate(Green_Density = (Green_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_g)) %>% 
-  mutate(Dino_Density = (Dino_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_g)) %>% 
-  mutate(Base_Diameter_mm = (Base_Width + Base_Length + Base_Diagonal)/3) %>% 
+  mutate(Dino_Density = (Dino_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_g)) %>%
   mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Event = as.factor(Event), 
          Field_Site = as.factor(Field_Site))
 ```
@@ -70,6 +71,7 @@ histDist(y, family = SHASH, density = FALSE,
 ```
 
 **PAM Graph**
+We see no significant differences between treatments at different times of the experiment. 
 ```{r}
 PAM_data_plot <- PAM_data %>% 
   filter(Event_True == "Acclimation_End" | Event_True == "Heat_End" | Event_True == "Recovery_End")
@@ -95,19 +97,25 @@ ggplot(PAM_data_end, aes(x = Treatment, y = PAM_avg)) +
 
 ### Symbiont Data
 ```{r}
-Density_Data <- health_data %>%
-  drop_na(Green_Density, Dino_Density)
+filtered_dates <- health_data %>%
+  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021")
+
+shapiro.test(filtered_dates$Green_Density)      #p-value < 0.05, not normal distribution
+bartlett.test(Green_Density ~ Treatment, filtered_dates)      #p-value < 0.05, does not meet assumption of equal variance
+
+shapiro.test(filtered_dates$Dino_Density)      #p-value < 0.05, not normal distribution
+bartlett.test(Dino_Density ~ Treatment, filtered_dates)      #p-value < 0.05, does not meet assumption of equal variance
 ```
 
 ```{r}
-ggplot(Density_Data, aes(x = Date, y = Green_Density)) +
+ggplot(filtered_dates, aes(x = Date, y = Green_Density)) +
   geom_boxplot() +
   facet_grid(. ~ Treatment) +
   theme_test()
 ```
 
 ```{r}
-ggplot(Density_Data, aes(x = Date, y = Dino_Density)) +
+ggplot(filtered_dates, aes(x = Date, y = Dino_Density)) +
   geom_boxplot() +
   facet_grid(. ~ Treatment) +
   theme_test()
@@ -115,17 +123,26 @@ ggplot(Density_Data, aes(x = Date, y = Dino_Density)) +
 
 ### Size Data
 ```{r}
-size_data <- health_data %>% 
-  drop_na(Base_Diameter_mm)
-
-shapiro.test(size_data$Base_Diameter_mm) # p-value < 0.05, distribution is not normal
-bartlett.test(PAM_avg ~ Treatment, data = size_data) # p-value < 0.05, does not meet equal variance assumptions
+shapiro.test(filtered_dates$Base_Diameter_mm) # p-value = 0.001, distribution is not normal
+bartlett.test(Base_Diameter_mm ~ Treatment, data = filtered_dates) # p-value = 0.30, yay equal variance
 ```
 
 **Size Graph**
 ```{r}
-ggplot(size_data, aes(x = Treatment, y = Base_Diameter_mm)) +
+ggplot(filtered_dates, aes(x = Date, y = Base_Diameter_mm)) +
   geom_boxplot() +
+  facet_grid(. ~ Treatment) +
+  theme_test()
+```
+
+### Feeding Data
+```{r}
+shapiro.test(filtered_dates$Feeding_Time_Min)      #p-value < 0.05, not normal distribution
+bartlett.test(Feeding_Time_Min ~ Treatment, filtered_dates)      #p-value < 0.01, does not meet assumption of equal variance
+
+ggplot(filtered_dates, aes(x = Date, y = Feeding_Time_Min)) +
+  geom_boxplot() +
+  facet_grid(. ~ Treatment) +
   theme_test()
 ```
 
@@ -154,6 +171,9 @@ open_closed_data <- heat_data %>%
 
 ggplot(data = open_closed_data, aes(x = Time_Block, y = n, fill = Open_Closed)) + 
   geom_bar(position="fill", stat="identity") +
-  theme_test()
+  facet_grid(. ~ Treatment) +
+  scale_fill_brewer(palette = "Reds")
+  theme_classic()
 ```
+
 
