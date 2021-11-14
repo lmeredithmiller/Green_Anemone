@@ -6,6 +6,7 @@ output: html_document
 ---
 
 ```{r, warning=FALSE, message=FALSE}
+library(performance)
 library(DHARMa)
 library(mgcv)
 library(fitdistrplus)
@@ -74,7 +75,9 @@ SHASH_data <- health_data %>%
   drop_na(Event_True) %>% 
   drop_na(Time_Point)
 
-gamlssML(formula = PAM_avg ~ Event_True*Time_Point + random(Species_ID), family = SHASH, data = SHASH_data)
+SHASH_model <- gamlssML(formula = PAM_avg ~ Event_True*Time_Point + random(Species_ID), family = SHASH, data = SHASH_data)
+
+check_model(SHASH_model)
 ```
 
 **PAM Graph**
