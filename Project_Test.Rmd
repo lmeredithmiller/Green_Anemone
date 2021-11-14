@@ -53,8 +53,6 @@ weibull_test(health_data$PAM_avg)    #p-value < 2.2e-16, cannot use
 ```
 
 ```{r}
-fitDist(PAM_avg, data = health_data, type = "real0to1", try.gamlss = T)
-
 PAM_visual <- fitDist(PAM_avg, data = health_data, type = "realAll", try.gamlss = T)
 # Family:  c("SHASH", "Sinh-Arcsinh"), Fitting method: "nlminb" with 12% error
 # Call:  gamlssML(formula = y, family = DIST[i]) 
