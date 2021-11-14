@@ -50,13 +50,41 @@ gamma_test(health_data$PAM_avg)      #p-value < 2.2e-16, cannot use
 lnorm_test(health_data$PAM_avg)      #p-value < 2.2e-16, cannot use
 normal_test(health_data$PAM_avg)     #p-value = 5.414e-08, cannot use
 weibull_test(health_data$PAM_avg)    #p-value < 2.2e-16, cannot use
+
+```{r}
+PAM_visual <- fitDist(PAM_avg, data = health_data, type = "realAll", try.gamlss = T)
+# Family:  c("SHASH", "Sinh-Arcsinh"), Fitting method: "nlminb" with 12% error
+# Call:  gamlssML(formula = y, family = DIST[i]) 
+```
+
+Visualizing fistDist:
+```{r}
+histDist(y, family = SHASH, density = FALSE, 
+        nbins = 10, xlab = "x", ylab = "y", data = PAM_visual, 
+        col.hist = "gray", border.hist = "blue", 
+        fg.hist = rainbow(12)[9])
+```
+
+Modelling fitDist:
+```{r}
+SHASH_data <- health_data %>% 
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Green_Density, Dino_Density, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3))
+  drop_na(PAM_avg) %>% 
+  drop_na(Event_True) %>% 
+  drop_na(Time_Point)
+
+gamlssML(formula = PAM_avg ~ Event_True*Time_Point + (1 | Species_ID), family = DIST[i], data = SHASH_data)
 ```
 
 **PAM Graph**
 We see no significant differences between treatments at different times of the experiment. 
 ```{r}
+
 filtered_dates <- health_data %>%
   filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021")
+=======
+PAM_data_plot <- health_data %>% 
+  filter(Event_True == "Acclimation_End" | Event_True == "Heat_End" | Event_True == "Recovery_End")
 
 ggplot(filtered_dates, aes(x = Treatment, y = PAM_avg)) +
   geom_boxplot() +
