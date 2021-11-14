@@ -38,37 +38,34 @@ health_data <- health_data %>%
 
 ### PAM data
 ```{r}
-PAM_data <- health_data %>%
-  drop_na(PAM_avg)
-
-shapiro.test(PAM_data$PAM_avg) # p-value < 0.05, distribution is not normal
-bartlett.test(PAM_avg ~ Treatment, data = PAM_data) # p-value < 0.05, does not meet equal variance assumptions
+shapiro.test(health_data$PAM_avg) # p-value < 0.05, distribution is not normal
+bartlett.test(PAM_avg ~ Treatment, data = health_data) # p-value < 0.05, does not meet equal variance assumptions
 ```
 
 Checking distribution:
 If we get get a p-value < 0.5, then they are significantly different and we should not test
 ```{r}
-exp_test(PAM_data$PAM_avg)        #p-value < 2.2e-16, cannot use
-gamma_test(PAM_data$PAM_avg)      #p-value < 2.2e-16, cannot use
-lnorm_test(PAM_data$PAM_avg)      #p-value < 2.2e-16, cannot use
-normal_test(PAM_data$PAM_avg)     #p-value = 5.414e-08, cannot use
-weibull_test(PAM_data$PAM_avg)    #p-value < 2.2e-16, cannot use
+exp_test(health_data$PAM_avg)        #p-value < 2.2e-16, cannot use
+gamma_test(health_data$PAM_avg)      #p-value < 2.2e-16, cannot use
+lnorm_test(health_data$PAM_avg)      #p-value < 2.2e-16, cannot use
+normal_test(health_data$PAM_avg)     #p-value = 5.414e-08, cannot use
+weibull_test(health_data$PAM_avg)    #p-value < 2.2e-16, cannot use
 ```
 
 **PAM Graph**
 We see no significant differences between treatments at different times of the experiment. 
 ```{r}
-PAM_data_plot <- PAM_data %>% 
-  filter(Event_True == "Acclimation_End" | Event_True == "Heat_End" | Event_True == "Recovery_End")
+filtered_dates <- health_data %>%
+  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021")
 
-ggplot(PAM_data_plot, aes(x = Treatment, y = PAM_avg)) +
+ggplot(filtered_dates, aes(x = Treatment, y = PAM_avg)) +
   geom_boxplot() +
   facet_grid(. ~ Event_True) +
   theme_test()
 ```
 
 ```{r}
-PAM_data_end <- health_data %>% 
+PAM_data_end <- filtered_dates %>% 
   filter(Event_True == "Heat_End") %>% 
   drop_na(PAM_avg)
 ```
@@ -82,9 +79,6 @@ ggplot(PAM_data_end, aes(x = Treatment, y = PAM_avg)) +
 
 ### Symbiont Data
 ```{r}
-filtered_dates <- health_data %>%
-  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021")
-
 shapiro.test(filtered_dates$Green_Density)      #p-value < 0.05, not normal distribution
 bartlett.test(Green_Density ~ Treatment, filtered_dates)      #p-value < 0.05, does not meet assumption of equal variance
 
