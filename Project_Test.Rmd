@@ -37,8 +37,7 @@ health_data <- health_data %>%
 
 ### PAM data
 ```{r}
-PAM_data <- health_data %>%
-  drop_na(PAM_avg)
+PAM_data <- health_data
 
 shapiro.test(PAM_data$PAM_avg) # p-value < 0.05, distribution is not normal
 bartlett.test(PAM_avg ~ Treatment, data = PAM_data) # p-value < 0.05, does not meet equal variance assumptions
@@ -52,6 +51,22 @@ gamma_test(PAM_data$PAM_avg)      #p-value < 2.2e-16, cannot use
 lnorm_test(PAM_data$PAM_avg)      #p-value < 2.2e-16, cannot use
 normal_test(PAM_data$PAM_avg)     #p-value = 5.414e-08, cannot use
 weibull_test(PAM_data$PAM_avg)    #p-value < 2.2e-16, cannot use
+```
+
+```{r}
+fitDist(PAM_avg, data = health_data, type = "real0to1", try.gamlss = T)
+
+PAM_visual <- fitDist(PAM_avg, data = health_data, type = "realAll", try.gamlss = T)
+# Family:  c("SHASH", "Sinh-Arcsinh"), Fitting method: "nlminb" with 12% error
+# Call:  gamlssML(formula = y, family = DIST[i]) 
+```
+
+Visualize fistDist
+```{r}
+histDist(y, family = SHASH, density = FALSE, 
+        nbins = 10, xlab = "x", ylab = "y", data = PAM_visual, 
+        col.hist = "gray", border.hist = "blue", 
+        fg.hist = rainbow(12)[9])
 ```
 
 **PAM Graph**
