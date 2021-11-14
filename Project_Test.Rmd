@@ -69,7 +69,7 @@ histDist(y, family = SHASH, density = FALSE,
 Modelling fitDist:
 ```{r}
 SHASH_data <- health_data %>% 
-  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Green_Density, Dino_Density, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino))
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Green_Density, Dino_Density, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3))
   drop_na(PAM_avg) %>% 
   drop_na(Event_True) %>% 
   drop_na(Time_Point)
