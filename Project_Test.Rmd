@@ -33,7 +33,7 @@ health_data <- health_data %>%
   mutate(Green_Density = (Green_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_g)) %>% 
   mutate(Dino_Density = (Dino_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_g)) %>%
   mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Event = as.factor(Event), 
-         Field_Site = as.factor(Field_Site))
+         Species_ID = as.factor(Species_ID), Field_Site = as.factor(Field_Site))
 ```
 
 ### PAM data
@@ -69,12 +69,12 @@ histDist(y, family = SHASH, density = FALSE,
 Modelling fitDist:
 ```{r}
 SHASH_data <- health_data %>% 
-  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Green_Density, Dino_Density, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3))
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Green_Density, Dino_Density, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3)) %>% 
   drop_na(PAM_avg) %>% 
   drop_na(Event_True) %>% 
   drop_na(Time_Point)
 
-gamlssML(formula = PAM_avg ~ Event_True*Time_Point + (1 | Species_ID), family = DIST[i], data = SHASH_data)
+gamlssML(formula = PAM_avg ~ Event_True*Time_Point + random(Species_ID), family = SHASH, data = SHASH_data)
 ```
 
 **PAM Graph**
