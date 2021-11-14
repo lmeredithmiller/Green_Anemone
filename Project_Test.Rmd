@@ -38,20 +38,18 @@ health_data <- health_data %>%
 
 ### PAM data
 ```{r}
-PAM_data <- health_data
-
-shapiro.test(PAM_data$PAM_avg) # p-value < 0.05, distribution is not normal
-bartlett.test(PAM_avg ~ Treatment, data = PAM_data) # p-value < 0.05, does not meet equal variance assumptions
+shapiro.test(health_data$PAM_avg) # p-value < 0.05, distribution is not normal
+bartlett.test(PAM_avg ~ Treatment, data = health_data) # p-value < 0.05, does not meet equal variance assumptions
 ```
 
 Checking distribution:
 If we get get a p-value < 0.5, then they are significantly different and we should not test
 ```{r}
-exp_test(PAM_data$PAM_avg)        #p-value < 2.2e-16, cannot use
-gamma_test(PAM_data$PAM_avg)      #p-value < 2.2e-16, cannot use
-lnorm_test(PAM_data$PAM_avg)      #p-value < 2.2e-16, cannot use
-normal_test(PAM_data$PAM_avg)     #p-value = 5.414e-08, cannot use
-weibull_test(PAM_data$PAM_avg)    #p-value < 2.2e-16, cannot use
+exp_test(health_data$PAM_avg)        #p-value < 2.2e-16, cannot use
+gamma_test(health_data$PAM_avg)      #p-value < 2.2e-16, cannot use
+lnorm_test(health_data$PAM_avg)      #p-value < 2.2e-16, cannot use
+normal_test(health_data$PAM_avg)     #p-value = 5.414e-08, cannot use
+weibull_test(health_data$PAM_avg)    #p-value < 2.2e-16, cannot use
 ```
 
 ```{r}
@@ -73,7 +71,7 @@ histDist(y, family = SHASH, density = FALSE,
 **PAM Graph**
 We see no significant differences between treatments at different times of the experiment. 
 ```{r}
-PAM_data_plot <- PAM_data %>% 
+PAM_data_plot <- health_data %>% 
   filter(Event_True == "Acclimation_End" | Event_True == "Heat_End" | Event_True == "Recovery_End")
 
 ggplot(PAM_data_plot, aes(x = Treatment, y = PAM_avg)) +
