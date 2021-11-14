@@ -2,7 +2,9 @@
 title: "Project Test"
 author: "Joan Moreaux"
 date: "07/11/2021"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r, warning=FALSE, message=FALSE}
@@ -15,10 +17,11 @@ library(FSA)
 library(fGarch)
 library(LambertW)
 library(ordinal)
+library(cowplot)
 library(tidyverse)
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 health_data <- read.csv("Big_Data_Green.csv")
 heat_data <- read.csv("Heat_Data.csv")
 ```
@@ -26,7 +29,7 @@ heat_data <- read.csv("Heat_Data.csv")
 ## Health Data
 Includes feeding time, PAM measurements, base measurements, and symbiont density 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 health_data <- health_data %>% 
   mutate(Fv_Fm_1 = as.numeric(Fv_Fm_1), PAM_avg = ((Fv_Fm_1 + Fv_Fm_2 + Fv_Fm_3)/3)) %>% 
   mutate(Base_Diameter_mm = (Base_Width + Base_Length + Base_Diagonal)/3) %>%
@@ -37,14 +40,14 @@ health_data <- health_data %>%
 ```
 
 ### PAM data
-```{r}
+```{r, warning=FALSE, message=FALSE}
 shapiro.test(health_data$PAM_avg) # p-value < 0.05, distribution is not normal
 bartlett.test(PAM_avg ~ Treatment, data = health_data) # p-value < 0.05, does not meet equal variance assumptions
 ```
 
 Checking distribution:
 If we get get a p-value < 0.5, then they are significantly different and we should not test
-```{r}
+```{r, warning=FALSE, message=FALSE}
 exp_test(health_data$PAM_avg)        #p-value < 2.2e-16, cannot use
 gamma_test(health_data$PAM_avg)      #p-value < 2.2e-16, cannot use
 lnorm_test(health_data$PAM_avg)      #p-value < 2.2e-16, cannot use
@@ -52,14 +55,14 @@ normal_test(health_data$PAM_avg)     #p-value = 5.414e-08, cannot use
 weibull_test(health_data$PAM_avg)    #p-value < 2.2e-16, cannot use
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 PAM_visual <- fitDist(PAM_avg, data = health_data, type = "realAll", try.gamlss = T)
 # Family:  c("SHASH", "Sinh-Arcsinh"), Fitting method: "nlminb" with 12% error
 # Call:  gamlssML(formula = y, family = DIST[i]) 
 ```
 
 Visualizing fistDist:
-```{r}
+```{r, warning=FALSE, message=FALSE}
 histDist(y, family = SHASH, density = FALSE, 
         nbins = 10, xlab = "x", ylab = "y", data = PAM_visual, 
         col.hist = "gray", border.hist = "blue", 
@@ -67,7 +70,7 @@ histDist(y, family = SHASH, density = FALSE,
 ```
 
 Modelling fitDist:
-```{r}
+```{r, warning=FALSE, message=FALSE}
 SHASH_data <- health_data %>% 
   select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Green_Density, Dino_Density, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3)) %>% 
   drop_na(PAM_avg) %>% 
@@ -79,7 +82,7 @@ gamlssML(formula = PAM_avg ~ Event_True*Time_Point + random(Species_ID), family 
 
 **PAM Graph**
 We see no significant differences between treatments at different times of the experiment. 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 PAM_data_plot <- health_data %>% 
   filter(Event_True == "Acclimation_End" | Event_True == "Heat_End" | Event_True == "Recovery_End")
 
@@ -89,13 +92,13 @@ ggplot(PAM_data_plot, aes(x = Treatment, y = PAM_avg)) +
   theme_test()
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 PAM_data_end <- health_data %>% 
   filter(Event_True == "Heat_End") %>% 
   drop_na(PAM_avg)
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 ggplot(PAM_data_end, aes(x = Treatment, y = PAM_avg)) +
   geom_boxplot() +
   theme_test()
@@ -103,7 +106,7 @@ ggplot(PAM_data_end, aes(x = Treatment, y = PAM_avg)) +
 
 
 ### Symbiont Data
-```{r}
+```{r, warning=FALSE, message=FALSE}
 filtered_dates <- health_data %>%
   filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021")
 
@@ -114,14 +117,14 @@ shapiro.test(filtered_dates$Dino_Density)      #p-value < 0.05, not normal distr
 bartlett.test(Dino_Density ~ Treatment, filtered_dates)      #p-value < 0.05, does not meet assumption of equal variance
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 ggplot(filtered_dates, aes(x = Date, y = Green_Density)) +
   geom_boxplot() +
   facet_grid(. ~ Treatment) +
   theme_test()
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 ggplot(filtered_dates, aes(x = Date, y = Dino_Density)) +
   geom_boxplot() +
   facet_grid(. ~ Treatment) +
@@ -129,13 +132,13 @@ ggplot(filtered_dates, aes(x = Date, y = Dino_Density)) +
 ```
 
 ### Size Data
-```{r}
+```{r, warning=FALSE, message=FALSE}
 shapiro.test(filtered_dates$Base_Diameter_mm) # p-value = 0.001, distribution is not normal
 bartlett.test(Base_Diameter_mm ~ Treatment, data = filtered_dates) # p-value = 0.30, yay equal variance
 ```
 
 **Size Graph**
-```{r}
+```{r, warning=FALSE, message=FALSE}
 ggplot(filtered_dates, aes(x = Date, y = Base_Diameter_mm)) +
   geom_boxplot() +
   facet_grid(. ~ Treatment) +
@@ -143,7 +146,7 @@ ggplot(filtered_dates, aes(x = Date, y = Base_Diameter_mm)) +
 ```
 
 ### Feeding Data
-```{r}
+```{r, warning=FALSE, message=FALSE}
 shapiro.test(filtered_dates$Feeding_Time_Min)      #p-value < 0.05, not normal distribution
 bartlett.test(Feeding_Time_Min ~ Treatment, filtered_dates)      #p-value < 0.01, does not meet assumption of equal variance
 
@@ -156,22 +159,21 @@ ggplot(filtered_dates, aes(x = Date, y = Feeding_Time_Min)) +
 ## Heat Data
 Includes temperature during heatwave and behabiroual responses (open vs closed)
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 heat_data <- heat_data %>% 
   mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Field_Site = as.factor(Field_Site)) %>% 
   group_by(Date, Treatment, Time_Block) %>% 
   mutate(Temp_avg = mean(Bucket_Temp))
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 ggplot(data = heat_data, aes(x = Time_Block, y = Temp_avg, color = Date)) +
-  geom_point() +
   geom_line() +
   facet_grid(. ~ Treatment) +
   theme_test()
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 open_closed_data <- heat_data %>% 
   group_by(Day, Treatment, Time_Block) %>% 
   count(Open_Closed)
@@ -179,8 +181,7 @@ open_closed_data <- heat_data %>%
 ggplot(data = open_closed_data, aes(x = Time_Block, y = n, fill = Open_Closed)) + 
   geom_bar(position="fill", stat="identity") +
   facet_grid(. ~ Treatment) +
-  scale_fill_brewer(palette = "Reds")
-  theme_classic()
+  scale_fill_brewer(palette = "Reds") +
+  theme_cowplot()
 ```
-
 
