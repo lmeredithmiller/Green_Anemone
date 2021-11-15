@@ -37,9 +37,11 @@ health_data <- health_data %>%
   mutate(Weight_Tentacle_mg = Weight_Tentacle_g*1000) %>% 
   mutate(Green_Density = (Green_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_mg)) %>% 
   mutate(Dino_Density = (Dino_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_mg)) %>%
-  mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Event = as.factor(Event), 
+  mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Date = as.factor(Date), Event = as.factor(Event), 
          Species_ID = as.factor(Species_ID), Field_Site = as.factor(Field_Site)) %>% 
-  filter(Species_ID != "G32B" & Species_ID != "G33B")
+  filter(Species_ID != "G32B" & Species_ID != "G33B") %>% 
+  mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C"))
+cols_for_heat = c("25C" = "brown2", "30C" = "darkred", "Control" = "azure4")
 ```
 
 ### PAM data
@@ -82,7 +84,10 @@ histDist(y, family = SHASH, density = FALSE,
 #Modelling fitDist
 
 PAM_data <- health_data %>% 
-  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Green_Density, Dino_Density, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3)) %>% 
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, 
+            Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Green_Density, Dino_Density, 
+            Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, 
+            Fv_Fm_2, Fv_Fm_3)) %>% 
   drop_na(PAM_avg) %>% 
   drop_na(Event_True) %>% 
   drop_na(Time_Point) %>% 
@@ -230,10 +235,19 @@ ggplot(filtered_dates, aes(x = Date, y = Base_Diameter_mm)) +
 shapiro.test(filtered_dates$Feeding_Time_Min)      #p-value < 0.05, not normal distribution
 bartlett.test(Feeding_Time_Min ~ Treatment, filtered_dates)      #p-value < 0.01, does not meet assumption of equal variance
 
-ggplot(filtered_dates, aes(x = Date, y = Feeding_Time_Min)) +
-  geom_boxplot() +
-  facet_grid(. ~ Treatment) +
+Feeding_Data <- filtered_dates %>% 
+  filter(Date != "11/13/2021") %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021"))
+  
+feeding_plot <- ggplot(Feeding_Data, aes(x = Date, y = Feeding_Time_Min, fill = Treatment)) +
+  geom_boxplot(alpha=0.85) +
+  xlab("Event") +
+  ylab("Feeding Time (minutes)") +
+  scale_color_manual(values = cols_for_heat) +
+  scale_fill_manual(values = cols_for_heat) +
   theme_test()
+feeding_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+                              "11/13/2021" = "Recovery"))
 ```
 
 Checking Distributions:
@@ -263,7 +277,6 @@ heat_data <- heat_data %>%
 
 **Temperature over time Graph**
 ```{r, warning=FALSE, message=FALSE}
-cols_for_heat = my_cols = c("25C" = "chartreuse4", "30C" = "blue4", "Control" = "azure4")
 heat_plot <- ggplot(data = heat_data, aes(x = Time_Block, y = Temp_avg, color = Treatment)) +
   geom_point(size = 1) +
   geom_line(alpha = 1.5) +
@@ -277,14 +290,20 @@ heat_plot
 
 **Open/Closed Graph**
 ```{r, warning=FALSE, message=FALSE}
-open_closed_data <- heat_data %>% 
+cols_for_behaviour = c("Open" = "bisque1", "Partial" = "brown2", "Closed" = "darkred")
+behaviour_data <- heat_data %>% 
+  mutate(Open_Closed = fct_relevel(Open_Closed, "Open", "Partial", "Closed")) %>% 
+  mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C")) %>% 
   group_by(Day, Treatment, Time_Block) %>% 
   count(Open_Closed)
 
-ggplot(data = open_closed_data, aes(x = Time_Block, y = n, fill = Open_Closed)) + 
+behaviour_plot <- ggplot(data = behaviour_data, aes(x = Time_Block, y = n, fill = Open_Closed)) + 
   geom_bar(position="fill", stat="identity") +
   facet_grid(. ~ Treatment) +
+  xlab("Time (hours)") +
+  ylab("Frequency") +
   scale_fill_brewer(palette = "Reds") +
   theme_cowplot()
+behaviour_plot + labs(fill = "Behaviour Response")
 ```
 
