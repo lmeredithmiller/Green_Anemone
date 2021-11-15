@@ -27,7 +27,7 @@ health_data <- read.csv("Big_Data_Green.csv")
 heat_data <- read.csv("Heat_Data.csv")
 ```
 
-## Health Data
+### Health Data
 Includes feeding time, PAM measurements, base measurements, and symbiont density 
 
 ```{r, warning=FALSE, message=FALSE}
