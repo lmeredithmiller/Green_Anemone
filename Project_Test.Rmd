@@ -94,7 +94,6 @@ summary(SHASH_model)
 #Time_Point:Treatment30C -0.002611   0.001736  -1.504   0.1337  
 
 #Time point and 25C is signifigant, 30C is not
-
 #plot avg fv/fm over all time points (this was signifigantly different over time)
 ```
 
