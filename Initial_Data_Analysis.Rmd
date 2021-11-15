@@ -34,8 +34,9 @@ Includes feeding time, PAM measurements, base measurements, and symbiont density
 health_data <- health_data %>% 
   mutate(Fv_Fm_1 = as.numeric(Fv_Fm_1), PAM_avg = ((Fv_Fm_1 + Fv_Fm_2 + Fv_Fm_3)/3)) %>% 
   mutate(Base_Diameter_mm = (Base_Width + Base_Length + Base_Diagonal)/3) %>%
-  mutate(Green_Density = (Green_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_g)) %>% 
-  mutate(Dino_Density = (Dino_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_g)) %>%
+  mutate(Weight_Tentacle_mg = Weight_Tentacle_g*1000) %>% 
+  mutate(Green_Density = (Green_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_mg)) %>% 
+  mutate(Dino_Density = (Dino_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_mg)) %>%
   mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Event = as.factor(Event), 
          Species_ID = as.factor(Species_ID), Field_Site = as.factor(Field_Site)) %>% 
   filter(Species_ID != "G32B" & Species_ID != "G33B")
@@ -115,7 +116,7 @@ ggplot(PAM_data_plot, aes(x = Treatment, y = PAM_avg)) +
   facet_grid(. ~ Event_True) +
   theme_test()
 
-ggplot(SHASH_data, aes(x = Time_Point, y = PAM_avg)) +
+ggplot(PAM_data, aes(x = Time_Point, y = PAM_avg)) +
   geom_boxplot() +
   facet_grid(. ~ Treatment) +
   theme_test()
@@ -256,16 +257,22 @@ Includes temperature during heatwave and behavioral responses (open vs closed)
 ```{r, warning=FALSE, message=FALSE}
 heat_data <- heat_data %>% 
   mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Field_Site = as.factor(Field_Site)) %>% 
-  group_by(Date, Treatment, Time_Block) %>% 
+  group_by(Treatment, Time_Block) %>% 
   mutate(Temp_avg = mean(Bucket_Temp))
 ```
 
 **Temperature over time Graph**
 ```{r, warning=FALSE, message=FALSE}
-ggplot(data = heat_data, aes(x = Time_Block, y = Temp_avg, color = Date)) +
-  geom_line() +
-  facet_grid(. ~ Treatment) +
+cols_for_heat = my_cols = c("25C" = "chartreuse4", "30C" = "blue4", "Control" = "azure4")
+heat_plot <- ggplot(data = heat_data, aes(x = Time_Block, y = Temp_avg, color = Treatment)) +
+  geom_point(size = 1) +
+  geom_line(alpha = 1.5) +
+  xlab("Time (hours)") +
+  ylab("Temperature (°C)") +
+  scale_color_manual(values = cols_for_heat) +
+  scale_fill_manual(values = cols_for_heat) +
   theme_test()
+heat_plot
 ```
 
 **Open/Closed Graph**
