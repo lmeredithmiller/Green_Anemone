@@ -76,11 +76,25 @@ SHASH_data <- health_data %>%
   select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Green_Density, Dino_Density, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3)) %>% 
   drop_na(PAM_avg) %>% 
   drop_na(Event_True) %>% 
-  drop_na(Time_Point)
+  drop_na(Time_Point) %>% 
+  filter(Species_ID != "G32B" & Species_ID != "G33B")
 
-SHASH_model <- gamlssML(formula = PAM_avg ~ Event_True*Time_Point + random(Species_ID), family = SHASH, data = SHASH_data)
+SHASH_data$orderTreatment = ordered(SHASH_data$Treatment, levels = c("Control", "25C", "30C"))
 
-check_model(SHASH_model)
+SHASH_model <- gamlss(formula = PAM_avg ~ Time_Point*Treatment + random(Species_ID), family = SHASH(), data = SHASH_data, control = gamlss.control(n.cyc = 200))
+
+summary(SHASH_model)
+#                         Estimate Std. Error t value Pr(>|t|)    
+#(Intercept)              0.467240   0.007285  64.136   <2e-16 ***
+#Time_Point               0.002956   0.001270   2.328   0.0206 *  
+#Treatment25C            -0.158368   0.009339 -16.958   <2e-16 ***
+#Treatment30C            -0.017513   0.009355  -1.872   0.0623 .  
+#Time_Point:Treatment25C -0.001190   0.001675  -0.711   0.4780    
+#Time_Point:Treatment30C -0.002611   0.001736  -1.504   0.1337  
+
+#Time point and 25C is signifigant, 30C is not
+
+#plot avg fv/fm over all time points (this was signifigantly different over time)
 ```
 
 **PAM Graph**
