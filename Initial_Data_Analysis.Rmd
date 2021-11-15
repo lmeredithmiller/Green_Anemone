@@ -49,6 +49,8 @@ bartlett.test(PAM_avg ~ Treatment, data = health_data) # p-value < 0.05, does no
 
 Checking distribution:
 If we get get a p-value < 0.5, then they are significantly different and we should not test
+Since we cannot use any that we learned in class, we are using fitDist to check many distributions at once. fitDist showed that the SHASH distribution fits the best with our data, so we can use histDist to visualize it. 
+
 ```{r, warning=FALSE, message=FALSE}
 exp_test(health_data$PAM_avg)        #p-value < 2.2e-16, cannot use
 gamma_test(health_data$PAM_avg)      #p-value < 2.2e-16, cannot use
@@ -57,6 +59,7 @@ normal_test(health_data$PAM_avg)     #p-value = 5.414e-08, cannot use
 weibull_test(health_data$PAM_avg)    #p-value < 2.2e-16, cannot use
 ```
 
+**histDist Graph**
 ```{r, warning=FALSE, message=FALSE}
 
 #Look for coral resiliancy Fv/Fm
@@ -65,10 +68,7 @@ PAM_visual <- fitDist(PAM_avg, data = health_data, type = "realAll", try.gamlss 
 
 # Family:  c("SHASH", "Sinh-Arcsinh"), Fitting method: "nlminb" with 12% error
 # Call:  gamlssML(formula = y, family = DIST[i]) 
-```
 
-
-```{r, warning=FALSE, message=FALSE}
 #Visualizing fistDist
 
 histDist(y, family = SHASH, density = FALSE, 
@@ -80,18 +80,18 @@ histDist(y, family = SHASH, density = FALSE,
 ```{r, warning=FALSE, message=FALSE}
 #Modelling fitDist
 
-SHASH_data <- health_data %>% 
+PAM_data <- health_data %>% 
   select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Green_Density, Dino_Density, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3)) %>% 
   drop_na(PAM_avg) %>% 
   drop_na(Event_True) %>% 
   drop_na(Time_Point) %>% 
   filter(Species_ID != "G32B" & Species_ID != "G33B")
 
-SHASH_data$orderTreatment = ordered(SHASH_data$Treatment, levels = c("Control", "25C", "30C"))
+PAM_data$orderTreatment = ordered(PAM_data$Treatment, levels = c("Control", "25C", "30C"))
 
-SHASH_model <- gamlss(formula = PAM_avg ~ Time_Point*Treatment + random(Species_ID), family = SHASH(), data = SHASH_data, control = gamlss.control(n.cyc = 200))
+PAM_model <- gamlss(formula = PAM_avg ~ Time_Point*Treatment + random(Species_ID), family = SHASH(), data = PAM_data, control = gamlss.control(n.cyc = 200))
 
-summary(SHASH_model)
+summary(PAM_model)
 #                         Estimate Std. Error t value Pr(>|t|)    
 #(Intercept)              0.467240   0.007285  64.136   <2e-16 ***
 #Time_Point               0.002956   0.001270   2.328   0.0206 *  
@@ -144,6 +144,50 @@ bartlett.test(Green_Density ~ Treatment, filtered_dates)      #p-value < 0.05, d
 shapiro.test(filtered_dates$Dino_Density)      #p-value < 0.05, not normal distribution
 bartlett.test(Dino_Density ~ Treatment, filtered_dates)      #p-value < 0.05, does not meet assumption of equal variance
 ```
+
+Checking distribution:
+```{r}
+#I dont think that SHASH is the right one i need time to figure this out 
+
+#Greens
+Green_Symbiont_Visual <- fitDist(Green_Density, data = filtered_dates, type = "realAll", try.gamlss = T)
+
+histDist(y, family = SHASH, density = FALSE, 
+        nbins = 10, xlab = "x", ylab = "y", data = Green_Symbiont_Visual, 
+        col.hist = "gray", border.hist = "blue", 
+        fg.hist = rainbow(12)[9])
+
+#Dinos
+Dino_Symbiont_Visual <- fitDist(Dino_Density, data = filtered_dates, type = "realAll", try.gamlss = T)
+
+histDist(y, family = SHASH, density = FALSE, 
+        nbins = 10, xlab = "x", ylab = "y", data = Dino_Symbiont_Visual, 
+        col.hist = "gray", border.hist = "blue", 
+        fg.hist = rainbow(12)[9])
+```
+
+Modelling Distributions
+```{r}
+Density_data <- health_data %>% 
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
+  drop_na(Green_Density) %>% 
+  drop_na(Dino_Density) %>% 
+  drop_na(Time_Point) %>% 
+  filter(Species_ID != "G32B" & Species_ID != "G33B")
+
+#Greens
+Green_Symbiont_Model <- gamlss(formula = Green_Density ~ Time_Point*Treatment + random(Species_ID), family = SHASH(), data = Density_data, control = gamlss.control(n.cyc = 250))
+#not converged by 250
+
+summary(Green_Symbiont_Model)
+
+#Dinos
+Dino_Symbiont_Model <- gamlss(formula = Green_Density ~ Time_Point*Treatment + random(Species_ID), family = SHASH(), data = Density_data, control = gamlss.control(n.cyc = 250))
+#not converged by 250
+
+summary(Dino_Symbiont_Model)
+```
+
 
 ```{r, warning=FALSE, message=FALSE}
 ggplot(filtered_dates, aes(x = Date, y = Green_Density)) +
