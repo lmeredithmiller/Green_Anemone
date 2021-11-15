@@ -37,7 +37,8 @@ health_data <- health_data %>%
   mutate(Green_Density = (Green_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_g)) %>% 
   mutate(Dino_Density = (Dino_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_g)) %>%
   mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Event = as.factor(Event), 
-         Species_ID = as.factor(Species_ID), Field_Site = as.factor(Field_Site))
+         Species_ID = as.factor(Species_ID), Field_Site = as.factor(Field_Site)) %>% 
+  filter(Species_ID != "G32B" & Species_ID != "G33B")
 ```
 
 ### PAM data
@@ -92,6 +93,11 @@ PAM_data_plot <- health_data %>%
 ggplot(PAM_data_plot, aes(x = Treatment, y = PAM_avg)) +
   geom_boxplot() +
   facet_grid(. ~ Event_True) +
+  theme_test()
+
+ggplot(SHASH_data, aes(x = Time_Point, y = PAM_avg)) +
+  geom_boxplot() +
+  facet_grid(. ~ Treatment) +
   theme_test()
 ```
 
