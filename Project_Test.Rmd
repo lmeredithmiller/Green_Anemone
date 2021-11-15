@@ -113,7 +113,6 @@ ggplot(PAM_data_end, aes(x = Treatment, y = PAM_avg)) +
   theme_test()
 ```
 
-
 ### Symbiont Data
 ```{r, warning=FALSE, message=FALSE}
 filtered_dates <- health_data %>%
