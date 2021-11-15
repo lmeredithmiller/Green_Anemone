@@ -148,46 +148,41 @@ bartlett.test(Dino_Density ~ Treatment, filtered_dates)      #p-value < 0.05, do
 Checking distribution:
 ```{r}
 #I dont think that SHASH is the right one i need time to figure this out 
-
-#Greens
-Green_Symbiont_Visual <- fitDist(Green_Density, data = filtered_dates, type = "realAll", try.gamlss = T)
-
-histDist(y, family = SHASH, density = FALSE, 
-        nbins = 10, xlab = "x", ylab = "y", data = Green_Symbiont_Visual, 
-        col.hist = "gray", border.hist = "blue", 
-        fg.hist = rainbow(12)[9])
-
-#Dinos
-Dino_Symbiont_Visual <- fitDist(Dino_Density, data = filtered_dates, type = "realAll", try.gamlss = T)
-
-histDist(y, family = SHASH, density = FALSE, 
-        nbins = 10, xlab = "x", ylab = "y", data = Dino_Symbiont_Visual, 
-        col.hist = "gray", border.hist = "blue", 
-        fg.hist = rainbow(12)[9])
-```
-
-Modelling Distributions
-```{r}
-Density_data <- health_data %>% 
+Green_Density_data <- health_data %>% 
   select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
   drop_na(Green_Density) %>% 
   drop_na(Dino_Density) %>% 
   drop_na(Time_Point) %>% 
-  filter(Species_ID != "G32B" & Species_ID != "G33B")
+  filter(Green_Density != 0)
 
 #Greens
-Green_Symbiont_Model <- gamlss(formula = Green_Density ~ Time_Point*Treatment + random(Species_ID), family = SHASH(), data = Density_data, control = gamlss.control(n.cyc = 250))
-#not converged by 250
+exp_test(Green_Density_data$Green_Density)         #p-value < 0.05
+gamma_test(Green_Density_data$Green_Density)       #p-value > 0.05, larger i can use, p = 0.3315
+lnorm_test(Green_Density_data$Green_Density)       #p-value < 0.05
+normal_test(Green_Density_data$Green_Density)      #p-value < 0.05, not a normal distribution
+weibull_test(Green_Density_data$Green_Density)     #p-value > 0.05, larger i can use, p = 0.936
 
-summary(Green_Symbiont_Model)
+Green_Gamma <- histDist(Green_Density_data$Green_Density, "GA", density = F, main = "Gamma")
+Green_Weibull <- histDist(Green_Density_data$Green_Density, "WEI", density = F, main = "Weibull")
 
 #Dinos
-Dino_Symbiont_Model <- gamlss(formula = Green_Density ~ Time_Point*Treatment + random(Species_ID), family = SHASH(), data = Density_data, control = gamlss.control(n.cyc = 250))
-#not converged by 250
 
-summary(Dino_Symbiont_Model)
+Dino_Density_data <- health_data %>% 
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
+  drop_na(Green_Density) %>% 
+  drop_na(Dino_Density) %>% 
+  drop_na(Time_Point) %>% 
+  filter(Dino_Density != 0)
+
+exp_test(Dino_Density_data$Dino_Density)           #p-value > 0.05
+gamma_test(Dino_Density_data$Dino_Density)         #p-value > 0.05, larger i can use, p = 0.9665
+lnorm_test(Dino_Density_data$Dino_Density)         #p-value < 0.05
+normal_test(Dino_Density_data$Dino_Density)        #p-value < 0.05, not a normal distribution
+weibull_test(Dino_Density_data$Dino_Density)       #p-value > 0.05, larger i can use, p = 0.588
+
+Dino_Gamma <- histDist(Dino_Density_data$Dino_Density, "GA", density = F, main = "Gamma")
+Dino_Weibull <- histDist(Dino_Density_data$Dino_Density, "WEI", density = F, main = "Weibull")
 ```
-
 
 ```{r, warning=FALSE, message=FALSE}
 ggplot(filtered_dates, aes(x = Date, y = Green_Density)) +
