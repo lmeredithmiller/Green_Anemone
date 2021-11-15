@@ -59,7 +59,7 @@ normal_test(health_data$PAM_avg)     #p-value = 5.414e-08, cannot use
 weibull_test(health_data$PAM_avg)    #p-value < 2.2e-16, cannot use
 ```
 
-**histDist Graph**
+**SHASH Distribution Graph for PAM Data**
 ```{r, warning=FALSE, message=FALSE}
 
 #Look for coral resiliancy Fv/Fm
@@ -162,7 +162,7 @@ lnorm_test(Green_Density_data$Green_Density)       #p-value < 0.05
 normal_test(Green_Density_data$Green_Density)      #p-value < 0.05, not a normal distribution
 weibull_test(Green_Density_data$Green_Density)     #p-value > 0.05, larger i can use, p = 0.936
 
-Green_Gamma <- histDist(Green_Density_data$Green_Density, "GA", density = F, main = "Gamma")
+#Use Weibull since p value is larger than gamma
 Green_Weibull <- histDist(Green_Density_data$Green_Density, "WEI", density = F, main = "Weibull")
 
 #Dinos
@@ -180,8 +180,8 @@ lnorm_test(Dino_Density_data$Dino_Density)         #p-value < 0.05
 normal_test(Dino_Density_data$Dino_Density)        #p-value < 0.05, not a normal distribution
 weibull_test(Dino_Density_data$Dino_Density)       #p-value > 0.05, larger i can use, p = 0.588
 
+#Use Gamma since p value is larger than weibull
 Dino_Gamma <- histDist(Dino_Density_data$Dino_Density, "GA", density = F, main = "Gamma")
-Dino_Weibull <- histDist(Dino_Density_data$Dino_Density, "WEI", density = F, main = "Weibull")
 ```
 
 ```{r, warning=FALSE, message=FALSE}
@@ -204,6 +204,18 @@ shapiro.test(filtered_dates$Base_Diameter_mm) # p-value = 0.001, distribution is
 bartlett.test(Base_Diameter_mm ~ Treatment, data = filtered_dates) # p-value = 0.30, yay equal variance
 ```
 
+Checking Distribution:
+```{r}
+exp_test(filtered_dates$Base_Diameter_mm)           #p-value < 0.05
+gamma_test(filtered_dates$Base_Diameter_mm)         #p-value > 0.05, p = 0.1874
+lnorm_test(filtered_dates$Base_Diameter_mm)         #p-value > 0.05, p = 0.4117
+normal_test(filtered_dates$Base_Diameter_mm)        #p-value < 0.05, not normal
+weibull_test(filtered_dates$Base_Diameter_mm)       #p-value < 0.05
+
+#Run lnorm since it has the higest p value
+Size_lnorm <- histDist(filtered_dates$Base_Diameter_mm, "LOGNO", density = T, main = "lNorm")
+```
+
 **Size Graph**
 ```{r, warning=FALSE, message=FALSE}
 ggplot(filtered_dates, aes(x = Date, y = Base_Diameter_mm)) +
@@ -221,6 +233,21 @@ ggplot(filtered_dates, aes(x = Date, y = Feeding_Time_Min)) +
   geom_boxplot() +
   facet_grid(. ~ Treatment) +
   theme_test()
+```
+
+Checking Distributions:
+```{r}
+Feeding_data <- health_data %>% 
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True, Green_Density, Dino_Density, Time_Point)) %>% 
+  drop_na(Feeding_Time_Min) 
+
+exp_test(Feeding_data$Feeding_Time_Min)           #p-value < 0.05
+gamma_test(Feeding_data$Feeding_Time_Min)         #p-value > 0.05, p = 0.1895
+lnorm_test(Feeding_data$Feeding_Time_Min)         #p-value > 0.05, p = 0.5839
+normal_test(Feeding_data$Feeding_Time_Min)        #p-value < 0.05, not normal
+weibull_test(Feeding_data$Feeding_Time_Min)       #p-value < 0.05
+
+Feeding_lnorm <- histDist(Feeding_data$Feeding_Time_Min, "LOGNO", density = T, main = "lNorm")
 ```
 
 ## Heat Data
