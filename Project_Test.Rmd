@@ -170,7 +170,7 @@ ggplot(filtered_dates, aes(x = Date, y = Feeding_Time_Min)) +
   theme_test()
 ```
 
-## Heat Data
+### Heat Data
 Includes temperature during heatwave and behavioral responses (open vs closed)
 
 ```{r}
