@@ -1,6 +1,6 @@
 ---
 title: "Project Test"
-author: "Joan Moreaux"
+author: "Joan Moreaux and Meredith Miller"
 date: "07/11/2021"
 output:
   pdf_document: default
