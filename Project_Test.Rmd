@@ -19,6 +19,7 @@ library(fGarch)
 library(LambertW)
 library(ordinal)
 library(cowplot)
+library(ggplot2)
 library(tidyverse)
 ```
 
@@ -175,9 +176,18 @@ heat_data <- heat_data %>%
 ```
 
 ```{r, warning=FALSE, message=FALSE}
+cols_for_heat = my_cols = c("11/6/2021" = "chartreuse4", "11/7/2021" = "blue4", "11/8/2021" = "azure4")
 ggplot(data = heat_data, aes(x = Time_Block, y = Temp_avg, color = Date)) +
-  geom_line() +
+  geom_point(size = 1) +
+  geom_line(alpha = 1.5) +
   facet_grid(. ~ Treatment) +
+  xlab("Time (hours)") +
+  ylab("Temperature (°C)") +
+  scale_color_manual(values = cols_for_heat) +
+  scale_fill_manual(values = cols_for_heat, 
+                    name="Heat\nDay",
+                    breaks=c("11/6/2021", "11/7/2021", "11/8/2021"),
+                    labels=c("Day 1", "Day 2", "Day 3")) +
   theme_test()
 ```
 
