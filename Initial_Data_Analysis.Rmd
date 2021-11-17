@@ -82,16 +82,17 @@ histDist(y, family = SHASH, density = FALSE,
 
 ```{r, warning=FALSE, message=FALSE}
 #Modelling fitDist
-
 PAM_data <- health_data %>% 
-  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, 
+  select(-c(Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, 
             Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Green_Density, Dino_Density, 
             Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, 
             Fv_Fm_2, Fv_Fm_3)) %>% 
   drop_na(PAM_avg) %>% 
   drop_na(Event_True) %>% 
   drop_na(Time_Point) %>% 
-  filter(Species_ID != "G32B" & Species_ID != "G33B")
+  filter(Species_ID != "G32B" & Species_ID != "G33B") %>% 
+  group_by(Treatment, Date) %>% 
+  mutate(PAM_per_Treatment = mean(PAM_avg))
 
 PAM_data$orderTreatment = ordered(PAM_data$Treatment, levels = c("Control", "25C", "30C"))
 
@@ -112,6 +113,19 @@ summary(PAM_model)
 
 **PAM Graph**
 We see no significant differences between treatments at different times of the experiment. 
+
+```{r}
+PAM_avg_plot <- ggplot(data = PAM_data, aes(x = Time_Point, y = PAM_per_Treatment, color = Treatment)) +
+  geom_point(size = 1) +
+  geom_line(alpha = 1.5) +
+  xlab("Time (Days)") +
+  ylab("PAM Measurements") +
+  scale_color_manual(values = cols_for_heat) +
+  scale_fill_manual(values = cols_for_heat) +
+  theme_test()
+PAM_avg_plot
+```
+
 ```{r, warning=FALSE, message=FALSE}
 PAM_data_plot <- health_data %>% 
   filter(Event_True == "Acclimation_End" | Event_True == "Heat_End" | Event_True == "Recovery_End")
@@ -192,17 +206,25 @@ Dino_Gamma <- histDist(Dino_Density_data$Dino_Density, "GA", density = F, main =
 ```
 
 ```{r, warning=FALSE, message=FALSE}
-ggplot(filtered_dates, aes(x = Date, y = Green_Density)) +
+green_plot <- ggplot(filtered_dates, aes(x = Date, y = Green_Density)) +
   geom_boxplot() +
+  xlab("Event") +
+  ylab("Green algae density") +
   facet_grid(. ~ Treatment) +
   theme_test()
+green_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+                              "11/13/2021" = "Recovery"))
 ```
 
 ```{r, warning=FALSE, message=FALSE}
-ggplot(filtered_dates, aes(x = Date, y = Dino_Density)) +
+dino_plot <- ggplot(filtered_dates, aes(x = Date, y = Dino_Density)) +
   geom_boxplot() +
+  xlab("Event") +
+  ylab("Dinoflagelatte density") +
   facet_grid(. ~ Treatment) +
   theme_test()
+dino_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+                              "11/13/2021" = "Recovery"))
 ```
 
 ### Size Data
