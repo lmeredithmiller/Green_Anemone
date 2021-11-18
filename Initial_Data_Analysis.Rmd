@@ -116,8 +116,8 @@ We see no significant differences between treatments at different times of the e
 
 ```{r}
 PAM_avg_plot <- ggplot(data = PAM_data, aes(x = Time_Point, y = PAM_per_Treatment, color = Treatment)) +
+  geom_line() +
   geom_point(size = 1) +
-  geom_line(alpha = 1.5) +
   xlab("Time (Days)") +
   ylab("PAM Measurements") +
   scale_color_manual(values = cols_for_heat) +
