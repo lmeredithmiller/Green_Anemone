@@ -37,8 +37,9 @@ health_data <- health_data %>%
   mutate(Weight_Tentacle_mg = Weight_Tentacle_g*1000) %>% 
   mutate(Green_Density = (Green_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_mg)) %>% 
   mutate(Dino_Density = (Dino_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_mg)) %>%
+  mutate(MI_Green = (Div_Green/Green_Cells)*100, MI_Dino = (Div_Dino/Dino_Cells)*100) %>% #Bates et al. 2010
   mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Date = as.factor(Date), Event = as.factor(Event), 
-         Species_ID = as.factor(Species_ID), Field_Site = as.factor(Field_Site)) %>% 
+         Species_ID = as.factor(Species_ID), Field_Site = as.factor(Field_Site), Event_True = as.factor(Event_True)) %>% 
   filter(Species_ID != "G32B" & Species_ID != "G33B") %>% 
   mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C"))
 cols_for_heat = c("25C" = "brown2", "30C" = "darkred", "Control" = "azure4")
@@ -85,8 +86,8 @@ histDist(y, family = SHASH, density = FALSE,
 PAM_data <- health_data %>% 
   select(-c(Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, 
             Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Green_Density, Dino_Density, 
-            Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, 
-            Fv_Fm_2, Fv_Fm_3)) %>% 
+            Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Div_Green, Div_Dino, MI_Green,
+            MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3)) %>% 
   drop_na(PAM_avg) %>% 
   drop_na(Event_True) %>% 
   drop_na(Time_Point) %>% 
@@ -156,6 +157,22 @@ ggplot(PAM_data_end, aes(x = Treatment, y = PAM_avg)) +
 ```
 
 ### Symbiont Data
+```{r}
+Green_Threshold <- health_data %>% 
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Div_Dino, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True, Dino_Density)) %>% 
+  drop_na(Green_Density) %>% 
+  drop_na(Time_Point) %>% 
+  filter(Green_Density != 0)
+
+Dino_Threshold <- health_data %>% 
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Div_Green, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True, Green_Density)) %>% 
+  drop_na(Dino_Density) %>% 
+  drop_na(Time_Point) %>% 
+  filter(Dino_Density != 0)
+```
+
+From the data above, we decide that the threshold for PAM will be 1000 cells per mg (symbiont density).
+
 ```{r, warning=FALSE, message=FALSE}
 filtered_dates <- health_data %>%
   filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
