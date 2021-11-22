@@ -176,7 +176,33 @@ Green_Density_data <- health_data %>%
   drop_na(Green_Density) %>% 
   drop_na(Dino_Density) %>% 
   drop_na(Time_Point) %>% 
+  mutate(Green_Density + 1) %>% 
+  mutate(Dino_Density + 1) %>% 
   filter(Green_Density != 0)
+
+#right transform 
+green_right_transform <- rightSkew %>%
+  mutate(Green_Density_data = log(abs(values)))
+
+ggplot(green_right_transform, aes(x = Green_Density_data)) + 
+  geom_density() + 
+  theme_classic() + 
+  geom_vline(xintercept = 0, colour = "red")
+
+#check with shapiro
+shapiro.test(green_right_transform$Green_Density_Data)
+
+#left transform 
+green_left_transform <- leftSkew %>%
+  mutate(Green_Density_data = sqrt(abs(values)))
+
+ggplot(left_transform, aes(x = Green_Density_data)) + 
+  geom_density() + 
+  theme_classic() + 
+  geom_vline(colour = "red")
+
+#check with shapiros
+shapiro.test(green_left_transform$Green_Density_data)
 
 #Greens
 exp_test(Green_Density_data$Green_Density)         #p-value < 0.05
@@ -195,6 +221,8 @@ Dino_Density_data <- health_data %>%
   drop_na(Green_Density) %>% 
   drop_na(Dino_Density) %>% 
   drop_na(Time_Point) %>% 
+  mutate(Green_Density + 1) %>% 
+  mutate(Dino_Density + 1) %>% 
   filter(Dino_Density != 0)
 
 exp_test(Dino_Density_data$Dino_Density)           #p-value > 0.05
