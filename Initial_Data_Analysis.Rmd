@@ -174,7 +174,7 @@ Dino_Threshold <- health_data %>%
 From the data above, we decide that the threshold for PAM will be 1000 cells per mg (symbiont density).
 
 ### Density Data
-The two datasets below are used in models for algae density of zoochlorellae and zooxathellae. It filters out unwanted columns and drops NAs for Green_Density and Dino_Density.
+The two datasets below are used in models for algae density and mitotic index of zoochlorellae and zooxathellae. It filters out unwanted columns and drops NAs for Green_Density, Dino_Density, MI_Green and MI_Dino.
 
 ```{r}
 Green_Symbionts <- health_data %>% 
