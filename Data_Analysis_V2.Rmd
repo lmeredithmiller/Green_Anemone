@@ -1,6 +1,6 @@
 ---
 title: "Data_Analysis_V2"
-author: "Joan Moreaux"
+author: "Joan Moreaux and Meredith Miller"
 date: "22/11/2021"
 output: pdf_document
 ---
