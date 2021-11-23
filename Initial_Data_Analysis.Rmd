@@ -350,3 +350,8 @@ behaviour_plot <- ggplot(data = behaviour_data, aes(x = Time_Block, y = n, fill 
 behaviour_plot + labs(fill = "Behaviour Response")
 ```
 
+### Ordinal Regression
+```{r}
+as_model = clmm(Open_Closed ~ Bucket_Temp * Sym.Status + (1 | system) + (1 | Genotype), data = heat_data)
+```
+

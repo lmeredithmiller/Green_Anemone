@@ -43,22 +43,43 @@ health_data <- health_data %>%
 cols_for_heat = c("25C" = "brown2", "30C" = "darkred", "Control" = "azure4")
 ```
 
-### PAM data
+### Symbiont Data
+
+**Symbiont threshold**
 ```{r}
-PAM_data <- health_data %>% 
-  select(-c(Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, 
-            Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, 
-            Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Div_Green, Div_Dino, MI_Green,
-            MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3)) %>% 
-  drop_na(PAM_avg) %>% 
-  drop_na(Event_True) %>% 
+green_threshold <- health_data %>% 
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Div_Dino, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True, Dino_Density)) %>% 
+  drop_na(Green_Density) %>% 
   drop_na(Time_Point) %>% 
-  filter(Species_ID != "G32B" & Species_ID != "G33B") %>%
-  filter(Green_Density < 1000 | Dino_Density < 1000) %>% 
-  group_by(Treatment, Date) %>% 
-  mutate(PAM_per_Treatment = mean(PAM_avg))
+  filter(Green_Density != 0)
+
+dino_threshold <- health_data %>% 
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Div_Green, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True, Green_Density)) %>% 
+  drop_na(Dino_Density) %>% 
+  drop_na(Time_Point) %>% 
+  filter(Dino_Density != 0)
 ```
 
+From the data above, we decide that the threshold for PAM will be 1000 cells per mg (symbiont density).
+
+### PAM data
+```{r}
+PAM_individuals <- health_data %>% 
+  filter(Green_Density > 1000 | Dino_Density > 1000) %>% 
+  distinct(Species_ID)
+
+PAM_data <- health_data %>% 
+  select(-c(Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, 
+             Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, 
+             Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Div_Green, Div_Dino, MI_Green,
+             MI_Dino)) %>%  
+  drop_na(PAM_avg) %>%
+  group_by(Treatment, Date) %>% 
+  mutate(PAM_per_Treatment = mean(PAM_avg))
+
+# match(PAM_individuals, PAM_data$Species_ID)
+```
+  
 ```{r, warning=FALSE, message=FALSE}
 shapiro.test(PAM_data$PAM_avg) # p-value < 0.05, distribution is not normal
 bartlett.test(PAM_avg ~ Treatment, data = PAM_data) # p-value < 0.05, does not meet equal variance assumptions
@@ -96,12 +117,30 @@ histDist(y, family = SHASH, density = FALSE,
         fg.hist = rainbow(12)[9])
 ```
 
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE, results='hide'}
 # Modelling fitDist
 PAM_model <- gamlss(formula = PAM_avg ~ Time_Point*Treatment + random(Species_ID), family = SHASH(), data = PAM_data, control = gamlss.control(n.cyc = 200))
-
+```
+```{r}
 summary(PAM_model)
 ```
+
 Findings:
 * Time point and 25C is signifigant, 30C is not
 * Plot avg fv/fm over all time points (this was signifigantly different over time)
+
+**PAM graphs**
+```{r}
+PAM_avg_plot <- ggplot(data = PAM_data, aes(x = Time_Point, y = PAM_per_Treatment, color = Treatment)) +
+  geom_line() +
+  geom_point(size = 1) +
+  xlab("Time (Days)") +
+  ylab("PAM Measurements") +
+  scale_color_manual(values = cols_for_heat)  +
+  scale_fill_manual(values = cols_for_heat) +
+  theme_test() +
+  geom_segment(aes(x = 2.5, y = 0.2, xend = 2.5, yend = 0.75), size = 0.5 ,linetype = 2, colour = "black") +
+  geom_segment(aes(x = 8.5, y = 0.2, xend = 8.5, yend =0.75), size= 0.35, linetype = 2, colour = "black")
+PAM_avg_plot
+```
+
