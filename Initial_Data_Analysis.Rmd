@@ -91,6 +91,7 @@ PAM_data <- health_data %>%
   drop_na(PAM_avg) %>% 
   drop_na(Event_True) %>% 
   drop_na(Time_Point) %>% 
+  filter(Species_ID != "G32B" & Species_ID != "G33B") %>%
   filter(Species_ID != "G32B" & Species_ID != "G33B") %>% 
   group_by(Treatment, Date) %>% 
   mutate(PAM_per_Treatment = mean(PAM_avg))
