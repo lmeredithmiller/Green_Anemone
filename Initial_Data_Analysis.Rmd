@@ -348,7 +348,9 @@ Includes temperature during heatwave and behavioral responses (open vs closed)
 
 ```{r, warning=FALSE, message=FALSE}
 heat_data <- heat_data %>% 
-  mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Field_Site = as.factor(Field_Site)) %>% 
+  mutate(Open_Closed = as.factor(Open_Closed), Bucket = as.factor(Bucket), 
+         Treatment = as.factor(Treatment), Field_Site = as.factor(Field_Site)) %>% 
+  mutate()
   group_by(Treatment, Time_Block) %>% 
   mutate(Temp_avg = mean(Bucket_Temp))
 ```
@@ -364,6 +366,12 @@ heat_plot <- ggplot(data = heat_data, aes(x = Time_Block, y = Temp_avg, color = 
   scale_fill_manual(values = cols_for_heat) +
   theme_test()
 heat_plot
+```
+
+### Ordinal Regression
+```{r}
+as_model = clmm(Open_Closed ~ Treatment + (1 | Bucket) + (1 | Species_ID), data = heat_data)
+summary(as_model)
 ```
 
 **Open/Closed Graph**
@@ -385,8 +393,4 @@ behaviour_plot <- ggplot(data = behaviour_data, aes(x = Time_Block, y = n, fill 
 behaviour_plot + labs(fill = "Behaviour Response")
 ```
 
-### Ordinal Regression
-```{r}
-as_model = clmm(Open_Closed ~ Bucket_Temp * Sym.Status + (1 | system) + (1 | Genotype), data = heat_data)
-```
 
