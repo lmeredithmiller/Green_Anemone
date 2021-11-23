@@ -157,7 +157,7 @@ ggplot(PAM_data_end, aes(x = Treatment, y = PAM_avg)) +
 ```
 
 ### Symbiont Data
-```{r}
+```{r, warning=FALSE, message=FALSE}
 Green_Threshold <- health_data %>% 
   select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Div_Dino, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True, Dino_Density)) %>% 
   drop_na(Green_Density) %>% 
@@ -176,7 +176,7 @@ From the data above, we decide that the threshold for PAM will be 1000 cells per
 ### Density Data
 The two datasets below are used in models for algae density and mitotic index of zoochlorellae and zooxathellae. It filters out unwanted columns and drops NAs for Green_Density, Dino_Density, MI_Green and MI_Dino.
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 Green_Symbionts <- health_data %>% 
   select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
   filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
@@ -199,7 +199,7 @@ Dino_Symbionts <- health_data %>%
 ```
 
 Checking Normality and Equal Variance:
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #Green
 shapiro.test(Green_Symbionts$Green_Density)      #p-value < 0.05, not normal distribution
 bartlett.test(Green_Density ~ Treatment, Green_Symbionts)      #p-value < 0.05, does not meet assumption of equal variance
@@ -211,7 +211,7 @@ bartlett.test(Dino_Density ~ Treatment, Dino_Symbionts)      #p-value < 0.05, do
 
 Checking Distributions:
 We first test distributions learned in class to see if they fit those with the normal data. We repeat this for both Green and Dino density.
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #Greens
 exp_test(Green_Symbionts$Green_Density)         #p-value < 0.05
 gamma_test(Green_Symbionts$Green_Density)       #p-value > 0.05, larger i can use, p = 0.123
@@ -235,7 +235,7 @@ Dino_Gamma <- histDist(Dino_Symbionts$Dino_Density, "GA", density = F, main = "G
 
 Running Models:
 We chose to use our Weibull distribution for green density and Gamma distribution for dino density. Here we run our models. 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #Green
 Green_Symbionts$orderTreatment = ordered(Green_Symbionts$Treatment, levels = c("Control", "25C", "30C"))
 
@@ -292,7 +292,7 @@ dino_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "P
 ### EXTRA DENSITY CALCULATIONS - NOT USING 
 Log Transformations:
 Next we run log transformations on our data and re-run the shapiro test to see if it has transformed our data to be more normal. We also mutate the data in order for the dataset to not contain 0s since we are running a log transformation. We repeat this for both Green and Dino density.
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #Green
 Green_log <- Green_Symbionts %>% mutate(log_data = log(abs(Green_Density + 0.01)))
 
@@ -306,7 +306,7 @@ shapiro.test(Dino_log$log_data)      #p-value < 0.05, not normal distribution
 
 Gaussian Transformation:
 Both log transformations did not make the data normal, so I will try a Gaussian transformation. 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #Green
 Green_gaussian <- Green_Symbionts %>% mutate(gaus_data = Gaussianize(Green_Symbionts$Green_Density, 's'))
 shapiro.test(Green_gaussian$gaus_data)      #p-value < 0.05, not normal distribution, p = 3.19e-05
@@ -323,6 +323,10 @@ Dino_gaussian_plot <- ggplot(Dino_gaussian, aes(x = gaus_data)) +
 The Gaussian transformation did not work on green density, when we ran a shapiro test for normality we got a p value smaller than 0.05. The transformation worked on the dino density. After visualizing the data, I think we will stick with the Weibell and Gamma distributions for green and dino density respectively.
 
 ### Size Data
+```{r}
+
+```
+
 ```{r, warning=FALSE, message=FALSE}
 shapiro.test(filtered_dates$Base_Diameter_mm) # p-value = 0.001, distribution is not normal
 bartlett.test(Base_Diameter_mm ~ Treatment, data = filtered_dates) # p-value = 0.30, yay equal variance
