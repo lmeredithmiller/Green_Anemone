@@ -1,0 +1,107 @@
+---
+title: "Data_Analysis_V2"
+author: "Joan Moreaux"
+date: "22/11/2021"
+output: pdf_document
+---
+
+```{r, warning=FALSE, message=FALSE}
+library(performance)
+library(DHARMa)
+library(mgcv)
+library(fitdistrplus)
+library(goft)
+library(gamlss)
+library(FSA) 
+library(fGarch)
+library(LambertW)
+library(ordinal)
+library(cowplot)
+library(tidyverse)
+```
+
+```{r, warning=FALSE, message=FALSE}
+health_data <- read.csv("Big_Data_Green.csv")
+heat_data <- read.csv("Heat_Data.csv")
+```
+
+## Health Data
+Includes feeding time, PAM measurements, base measurements, and symbiont density 
+
+```{r, warning=FALSE, message=FALSE}
+health_data <- health_data %>% 
+  mutate(Fv_Fm_1 = as.numeric(Fv_Fm_1), PAM_avg = ((Fv_Fm_1 + Fv_Fm_2 + Fv_Fm_3)/3)) %>% 
+  mutate(Base_Diameter_mm = (Base_Width + Base_Length + Base_Diagonal)/3) %>%
+  mutate(Weight_Tentacle_mg = Weight_Tentacle_g*1000) %>% 
+  mutate(Green_Density = (Green_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_mg)) %>% 
+  mutate(Dino_Density = (Dino_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_mg)) %>%
+  mutate(MI_Green = (Div_Green/Green_Cells)*100, MI_Dino = (Div_Dino/Dino_Cells)*100) %>% #Bates et al. 2010
+  mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Date = as.factor(Date), Event = as.factor(Event), 
+         Species_ID = as.factor(Species_ID), Field_Site = as.factor(Field_Site), Event_True = as.factor(Event_True)) %>% 
+  filter(Species_ID != "G32B" & Species_ID != "G33B") %>% 
+  mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C"))
+cols_for_heat = c("25C" = "brown2", "30C" = "darkred", "Control" = "azure4")
+```
+
+### PAM data
+```{r}
+PAM_data <- health_data %>% 
+  select(-c(Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, 
+            Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, 
+            Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Div_Green, Div_Dino, MI_Green,
+            MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3)) %>% 
+  drop_na(PAM_avg) %>% 
+  drop_na(Event_True) %>% 
+  drop_na(Time_Point) %>% 
+  filter(Species_ID != "G32B" & Species_ID != "G33B") %>%
+  filter(Green_Density < 1000 | Dino_Density < 1000) %>% 
+  group_by(Treatment, Date) %>% 
+  mutate(PAM_per_Treatment = mean(PAM_avg))
+```
+
+```{r, warning=FALSE, message=FALSE}
+shapiro.test(PAM_data$PAM_avg) # p-value < 0.05, distribution is not normal
+bartlett.test(PAM_avg ~ Treatment, data = PAM_data) # p-value < 0.05, does not meet equal variance assumptions
+```
+
+Our data does not meet the assumption and therefore we will not be able to use tests such as ANOVA and linear models. 
+
+Checking distribution:
+If we get get a p-value < 0.5, then they is a significant differnce between the data and the distribution, and therefore this model should not be used in our analyse.
+
+```{r, warning=FALSE, message=FALSE}
+exp_test(PAM_data$PAM_avg)        #p-value < 2.2e-16, cannot use
+gamma_test(PAM_data$PAM_avg)      #p-value < 0.00334, cannot use
+lnorm_test(PAM_data$PAM_avg)      #p-value = 1.97e-07, cannot use
+normal_test(PAM_data$PAM_avg)     #p-value = 0.002704, cannot use
+weibull_test(PAM_data$PAM_avg)    #p-value < 2.2e-16, cannot use
+```
+
+Since we cannot use any that we learned in class, we are using fitDist to check many distributions at once. fitDist showed that the SHASH distribution fits the best with our data, so we can use histDist to visualize it. 
+
+**SHASH Distribution Graph for PAM Data**
+```{r, warning=FALSE, message=FALSE}
+#Look for anemone resiliancy Fv/Fm
+
+PAM_visual <- fitDist(PAM_avg, data = PAM_data, type = "realAll", try.gamlss = T)
+
+# Family:  c("SHASH", "Sinh-Arcsinh"), Fitting method: "nlminb" with 12% error
+# Call:  gamlssML(formula = y, family = DIST[i]) 
+
+#Visualizing fistDist
+
+histDist(y, family = SHASH, density = FALSE, 
+        nbins = 10, xlab = "x", ylab = "y", data = PAM_visual, 
+        col.hist = "gray", border.hist = "blue", 
+        fg.hist = rainbow(12)[9])
+```
+
+```{r, warning=FALSE, message=FALSE}
+# Modelling fitDist
+PAM_model <- gamlss(formula = PAM_avg ~ Time_Point*Treatment + random(Species_ID), family = SHASH(), data = PAM_data, control = gamlss.control(n.cyc = 200))
+
+summary(PAM_model)
+```
+Findings:
+* Time point and 25C is signifigant, 30C is not
+* Plot avg fv/fm over all time points (this was signifigantly different over time)
