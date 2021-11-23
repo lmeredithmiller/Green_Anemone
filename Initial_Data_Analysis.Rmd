@@ -186,73 +186,80 @@ shapiro.test(filtered_dates$Dino_Density)      #p-value < 0.05, not normal distr
 bartlett.test(Dino_Density ~ Treatment, filtered_dates)      #p-value < 0.05, does not meet assumption of equal variance
 ```
 
-Checking distribution:
+### Density Data
+The two datasets below are used in models for algae density of zoochlorellae and zooxathellae. It filters out unwanted columns and drops NAs for Green_Density and Dino_Density.
+
 ```{r}
-#I dont think that SHASH is the right one i need time to figure this out 
 Green_Density_data <- health_data %>% 
   select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
   drop_na(Green_Density) %>% 
   drop_na(Dino_Density) %>% 
-  drop_na(Time_Point) %>% 
-  mutate(Green_Density + 1) %>% 
-  mutate(Dino_Density + 1) %>% 
   filter(Green_Density != 0)
-
-#right transform 
-green_right_transform <- rightSkew %>%
-  mutate(Green_Density_data = log(abs(values)))
-
-ggplot(green_right_transform, aes(x = Green_Density_data)) + 
-  geom_density() + 
-  theme_classic() + 
-  geom_vline(xintercept = 0, colour = "red")
-
-#check with shapiro
-shapiro.test(green_right_transform$Green_Density_Data)
-
-#left transform 
-green_left_transform <- leftSkew %>%
-  mutate(Green_Density_data = sqrt(abs(values)))
-
-ggplot(left_transform, aes(x = Green_Density_data)) + 
-  geom_density() + 
-  theme_classic() + 
-  geom_vline(colour = "red")
-
-#check with shapiros
-shapiro.test(green_left_transform$Green_Density_data)
-
-#Greens
-exp_test(Green_Density_data$Green_Density)         #p-value < 0.05
-gamma_test(Green_Density_data$Green_Density)       #p-value > 0.05, larger i can use, p = 0.3315
-lnorm_test(Green_Density_data$Green_Density)       #p-value < 0.05
-normal_test(Green_Density_data$Green_Density)      #p-value < 0.05, not a normal distribution
-weibull_test(Green_Density_data$Green_Density)     #p-value > 0.05, larger i can use, p = 0.936
-
-#Use Weibull since p value is larger than gamma
-Green_Weibull <- histDist(Green_Density_data$Green_Density, "WEI", density = F, main = "Weibull")
-
-#Dinos
 
 Dino_Density_data <- health_data %>% 
   select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
   drop_na(Green_Density) %>% 
   drop_na(Dino_Density) %>% 
-  drop_na(Time_Point) %>% 
-  mutate(Green_Density + 1) %>% 
-  mutate(Dino_Density + 1) %>% 
   filter(Dino_Density != 0)
+```
 
+Checking Distributions:
+We first test distributions learned in class to see if they fit those with the normal data. We repeat this for both Green and Dino density.
+```{r}
+#Greens
+exp_test(Green_Density_data$Green_Density)         #p-value < 0.05
+gamma_test(Green_Density_data$Green_Density)       #p-value > 0.05, larger i can use, p = 0.123
+lnorm_test(Green_Density_data$Green_Density)       #p-value < 0.05
+normal_test(Green_Density_data$Green_Density)      #p-value < 0.05, not a normal distribution
+weibull_test(Green_Density_data$Green_Density)     #p-value > 0.05, larger i can use, p = 0.44
+
+#Use Weibull since p value is larger than gamma
+Green_Weibull <- histDist(Green_Density_data$Green_Density, "WEI", density = F, main = "Weibull")
+
+#Dinos
 exp_test(Dino_Density_data$Dino_Density)           #p-value > 0.05
-gamma_test(Dino_Density_data$Dino_Density)         #p-value > 0.05, larger i can use, p = 0.9665
+gamma_test(Dino_Density_data$Dino_Density)         #p-value > 0.05, larger i can use, p = 0.6709
 lnorm_test(Dino_Density_data$Dino_Density)         #p-value < 0.05
 normal_test(Dino_Density_data$Dino_Density)        #p-value < 0.05, not a normal distribution
-weibull_test(Dino_Density_data$Dino_Density)       #p-value > 0.05, larger i can use, p = 0.588
+weibull_test(Dino_Density_data$Dino_Density)       #p-value > 0.05, larger i can use, p = 0.774
 
 #Use Gamma since p value is larger than weibull
 Dino_Gamma <- histDist(Dino_Density_data$Dino_Density, "GA", density = F, main = "Gamma")
 ```
 
+Log Transformations:
+Next we run log transformations on our data and re-run the shapiro test to see if it has transformed our data to be more normal. We also mutate the data in order for the dataset to not contain 0s since we are running a log transformation. We repeat this for both Green and Dino density.
+```{r}
+#Green
+Green_log <- Green_Density_data %>% mutate(log_data = log(abs(Green_Density + 0.01)))
+
+shapiro.test(Green_log$log_data)      #p-value < 0.05, not normal distribution
+
+#Dino
+Dino_log <- Dino_Density_data %>% mutate(log_data = log(abs(Dino_Density + 0.01)))
+
+shapiro.test(Dino_log$log_data)      #p-value < 0.05, not normal distribution
+```
+
+Gaussian Transformation:
+Both log transformations did not make the data normal, so I will try a Gaussian transformation. 
+```{r}
+#Green
+Green_gaussian <- Green_Density_data %>% mutate(gaus_data = Gaussianize(Green_Density_data$Green_Density, 's'))
+shapiro.test(Green_gaussian$gaus_data)      #p-value < 0.05, not normal distribution, p = 3.19e-05
+
+#Dino
+Dino_gaussian <- Dino_Density_data %>% mutate(gaus_data = Gaussianize(Dino_Density_data$Dino_Density, 's'))
+shapiro.test(Dino_gaussian$gaus_data)      #p-value > 0.05, normal distribution, p = 0.106
+
+Dino_gaussian_plot <- ggplot(Dino_gaussian, aes(x = gaus_data)) + 
+  geom_density() + 
+  theme_classic() + 
+  geom_vline(xintercept = 0, colour = "red")
+```
+The Gaussian transformation did not work on green density, when we ran a shapiro test for normality we got a p value smaller than 0.05. The transformation worked on the dino density. After visualizing the data, I think we will stick with the Weibell and Gamma distributions for green and dino density respectively. 
+
+Plots:
 ```{r, warning=FALSE, message=FALSE}
 green_plot <- ggplot(filtered_dates, aes(x = Date, y = Green_Density)) +
   geom_boxplot() +
