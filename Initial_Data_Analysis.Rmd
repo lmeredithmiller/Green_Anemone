@@ -324,24 +324,28 @@ The Gaussian transformation did not work on green density, when we ran a shapiro
 
 ### Size Data
 ```{r}
-
+Size_Data <- health_data %>% 
+  select(-c(Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Weight_Tentacle_mg, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Green_Density, Dino_Density, MI_Green, MI_Dino, Div_Green, Div_Dino)) %>%
+  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021")) %>% 
+  drop_na(Base_Diameter_mm)
 ```
 
 ```{r, warning=FALSE, message=FALSE}
-shapiro.test(filtered_dates$Base_Diameter_mm) # p-value = 0.001, distribution is not normal
-bartlett.test(Base_Diameter_mm ~ Treatment, data = filtered_dates) # p-value = 0.30, yay equal variance
+shapiro.test(Size_Data$Base_Diameter_mm) # p-value = 0.0002, distribution is not normal
+bartlett.test(Base_Diameter_mm ~ Treatment, data = filtered_dates) # p-value = 0.15, yay equal variance
 ```
 
 Checking Distribution:
 ```{r}
-exp_test(filtered_dates$Base_Diameter_mm)           #p-value < 0.05
-gamma_test(filtered_dates$Base_Diameter_mm)         #p-value > 0.05, p = 0.1874
-lnorm_test(filtered_dates$Base_Diameter_mm)         #p-value > 0.05, p = 0.4117
-normal_test(filtered_dates$Base_Diameter_mm)        #p-value < 0.05, not normal
-weibull_test(filtered_dates$Base_Diameter_mm)       #p-value < 0.05
+exp_test(Size_Data$Base_Diameter_mm)            #p-value < 0.05
+gamma_test(Size_Data$Base_Diameter_mm)          #p-value > 0.05, p = 0.1874
+lnorm_test(Size_Data$Base_Diameter_mm)          #p-value > 0.05, p = 0.4117
+normal_test(Size_Data$Base_Diameter_mm)         #p-value < 0.05, not normal
+weibull_test(Size_Data$Base_Diameter_mm)        #p-value < 0.05
 
 #Run lnorm since it has the higest p value
-Size_lnorm <- histDist(filtered_dates$Base_Diameter_mm, "LOGNO", density = T, main = "lNorm")
+Size_lnorm <- histDist(Size_Data$Base_Diameter_mm, "LOGNO", density = T, main = "lNorm")
 ```
 
 **Size Graph**
