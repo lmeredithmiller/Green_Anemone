@@ -282,6 +282,12 @@ dino_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "P
                               "11/13/2021" = "Recovery"))
 ```
 
+### Mitotic Index
+```{r}
+shapiro.test(filtered_dates$Feeding_Time_Min)      #p-value < 0.05, not normal distribution
+bartlett.test(Feeding_Time_Min ~ Treatment, filtered_dates)      #p-value < 0.01, does not meet assumption of equal variance
+```
+
 ### Size Data
 ```{r, warning=FALSE, message=FALSE}
 shapiro.test(filtered_dates$Base_Diameter_mm) # p-value = 0.001, distribution is not normal
@@ -350,7 +356,8 @@ Includes temperature during heatwave and behavioral responses (open vs closed)
 heat_data <- heat_data %>% 
   mutate(Open_Closed = as.factor(Open_Closed), Bucket = as.factor(Bucket), 
          Treatment = as.factor(Treatment), Field_Site = as.factor(Field_Site)) %>% 
-  mutate()
+  mutate(Open_Closed = fct_relevel(Open_Closed, "Open", "Partial", "Closed")) %>% 
+  mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C")) %>% 
   group_by(Treatment, Time_Block) %>% 
   mutate(Temp_avg = mean(Bucket_Temp))
 ```
@@ -378,8 +385,6 @@ summary(as_model)
 ```{r, warning=FALSE, message=FALSE}
 cols_for_behaviour = c("Open" = "bisque1", "Partial" = "brown2", "Closed" = "darkred")
 behaviour_data <- heat_data %>% 
-  mutate(Open_Closed = fct_relevel(Open_Closed, "Open", "Partial", "Closed")) %>% 
-  mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C")) %>% 
   group_by(Day, Treatment, Time_Block) %>% 
   count(Open_Closed)
 
