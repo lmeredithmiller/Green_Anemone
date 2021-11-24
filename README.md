@@ -1,9 +1,12 @@
 # Green_Anemone
 
-Authors: Meredith Miller and Joan Moreaux
+Authors: 
 
-Description of Project:
+Meredith Miller (Undergraduate Student, Simon Fraser University (SFU), lmm23@sfu.ca)
 
-Analysis of the effects of increased temperature on the giant green anemone *Anthopleura xanthogrammica*. 
+Joan Moreaux (Undergraduate Student, University of British Columbia (UBC), joan.moreaux@gmail.com)
 
-Notes on Project:
+Project Description:
+
+Analysis of the effects of increased temperature on the giant green anemone *Anthopleura xanthogrammica*. This repository includes datasets and RMD files for experiment and observation analysis on *A. xanthogrammica*. 
+
