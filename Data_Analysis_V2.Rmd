@@ -148,3 +148,106 @@ PAM_avg_plot <- ggplot(data = filtered_PAM_data, aes(x = Time_Point, y = PAM_per
 PAM_avg_plot
 ```
 
+### Density Data
+The two datasets below are used in models for algae density and mitotic index of zoochlorellae and zooxathellae. It filters out unwanted columns and drops NAs for Green_Density, Dino_Density, MI_Green and MI_Dino.
+
+```{r, warning=FALSE, message=FALSE}
+Green_Symbionts <- health_data %>% 
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
+  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021")) %>% 
+  drop_na(Green_Density) %>% 
+  drop_na(Dino_Density) %>% 
+  drop_na(MI_Green) %>% 
+  drop_na(MI_Dino) %>% 
+  filter(Green_Density != 0)
+
+Dino_Symbionts <- health_data %>% 
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
+  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021")) %>% 
+  drop_na(Green_Density) %>% 
+  drop_na(Dino_Density) %>% 
+  drop_na(MI_Green) %>% 
+  drop_na(MI_Dino) %>% 
+  filter(Dino_Density != 0)
+```
+
+Checking Normality and Equal Variance:
+```{r, warning=FALSE, message=FALSE}
+#Green
+shapiro.test(Green_Symbionts$Green_Density)      #p-value < 0.05, not normal distribution
+bartlett.test(Green_Density ~ Treatment, Green_Symbionts)      #p-value < 0.05, does not meet assumption of equal variance
+
+#Dino
+shapiro.test(Dino_Symbionts$Dino_Density)      #p-value < 0.05, not normal distribution
+bartlett.test(Dino_Density ~ Treatment, Dino_Symbionts)      #p-value < 0.05, does not meet assumption of equal variance
+```
+
+Checking Distributions:
+We first test distributions learned in class to see if they fit those with the normal data. We repeat this for both Green and Dino density.
+```{r, warning=FALSE, message=FALSE}
+#Greens
+exp_test(Green_Symbionts$Green_Density)         #p-value < 0.05
+gamma_test(Green_Symbionts$Green_Density)       #p-value > 0.05, larger i can use, p = 0.123
+lnorm_test(Green_Symbionts$Green_Density)       #p-value < 0.05
+normal_test(Green_Symbionts$Green_Density)      #p-value < 0.05, not a normal distribution
+weibull_test(Green_Symbionts$Green_Density)     #p-value > 0.05, larger i can use, p = 0.44
+
+#Use Weibull since p value is larger than gamma
+Green_Weibull <- histDist(Green_Symbionts$Green_Density, "WEI", density = F, main = "Weibull")
+
+#Dinos
+exp_test(Dino_Symbionts$Dino_Density)           #p-value > 0.05
+gamma_test(Dino_Symbionts$Dino_Density)         #p-value > 0.05, larger i can use, p = 0.6709
+lnorm_test(Dino_Symbionts$Dino_Density)         #p-value < 0.05
+normal_test(Dino_Symbionts$Dino_Density)        #p-value < 0.05, not a normal distribution
+weibull_test(Dino_Symbionts$Dino_Density)       #p-value > 0.05, larger i can use, p = 0.774
+
+#Use Gamma since p value is larger than weibull
+Dino_Gamma <- histDist(Dino_Symbionts$Dino_Density, "GA", density = F, main = "Gamma")
+```
+
+Running Models:
+We chose to use our Weibull distribution for green density and Gamma distribution for dino density. Here we run our models. 
+```{r, warning=FALSE, message=FALSE}
+#Green
+Green_Symbionts$orderTreatment = ordered(Green_Symbionts$Treatment, levels = c("Control", "25C", "30C"))
+
+Green_Weibull_model <- gamlss(formula = Green_Density ~ Time_Point*Treatment + random(Species_ID), family = WEI(), data = Green_Symbionts, control = gamlss.control(n.cyc = 5))
+summary(Green_Weibull_model)
+
+#Dino
+Dino_Symbionts$orderTreatment = ordered(Dino_Symbionts$Treatment, levels = c("Control", "25C", "30C"))
+
+Dino_Gamma_model <- gamlss(formula = Dino_Density ~ Time_Point*Treatment + random(Species_ID), family = GA(), data = Dino_Symbionts, control = gamlss.control(n.cyc = 3))
+summary(Dino_Gamma_model)
+```
+The green density data was run with a weibull distribution. This model shows significance in intercept, time point, 30C treatment, and Time point:Treatment 30C. 
+
+The dino density data was run with a gamma distribution. This model shows significance in intercept, treatment 25C and treatment 30C. 
+
+Plots:
+```{r, warning=FALSE, message=FALSE}
+#Green
+green_plot <- ggplot(Green_Symbionts, aes(x = Date, y = Green_Density)) +
+  geom_boxplot() +
+  xlab("Event") +
+  ylab("Green algae density") +
+  facet_grid(. ~ Treatment) +
+  theme_test()
+green_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+                              "11/13/2021" = "Recovery"))
+
+#Dino
+dino_plot <- ggplot(Dino_Symbionts, aes(x = Date, y = Dino_Density)) +
+  geom_boxplot() +
+  xlab("Event") +
+  ylab("Dinoflagelatte density") +
+  facet_grid(. ~ Treatment) +
+  theme_test()
+dino_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+                              "11/13/2021" = "Recovery"))
+```
+
+

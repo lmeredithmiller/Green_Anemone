@@ -99,7 +99,6 @@ PAM_data <- health_data %>%
 PAM_data$orderTreatment = ordered(PAM_data$Treatment, levels = c("Control", "25C", "30C"))
 
 PAM_model <- gamlss(formula = PAM_avg ~ Time_Point*Treatment + random(Species_ID), family = SHASH(), data = PAM_data, control = gamlss.control(n.cyc = 200))
-
 summary(PAM_model)
 #                         Estimate Std. Error t value Pr(>|t|)    
 #(Intercept)              0.467240   0.007285  64.136   <2e-16 ***
@@ -158,7 +157,7 @@ ggplot(PAM_data_end, aes(x = Treatment, y = PAM_avg)) +
 ```
 
 ### Symbiont Data
-```{r}
+```{r, warning=FALSE, message=FALSE}
 Green_Threshold <- health_data %>% 
   select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Div_Dino, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True, Dino_Density)) %>% 
   drop_na(Green_Density) %>% 
@@ -174,90 +173,98 @@ Dino_Threshold <- health_data %>%
 
 From the data above, we decide that the threshold for PAM will be 1000 cells per mg (symbiont density).
 
-```{r, warning=FALSE, message=FALSE}
-filtered_dates <- health_data %>%
-  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
-  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021"))
-
-shapiro.test(filtered_dates$Green_Density)      #p-value < 0.05, not normal distribution
-bartlett.test(Green_Density ~ Treatment, filtered_dates)      #p-value < 0.05, does not meet assumption of equal variance
-
-shapiro.test(filtered_dates$Dino_Density)      #p-value < 0.05, not normal distribution
-bartlett.test(Dino_Density ~ Treatment, filtered_dates)      #p-value < 0.05, does not meet assumption of equal variance
-```
-
 ### Density Data
-The two datasets below are used in models for algae density of zoochlorellae and zooxathellae. It filters out unwanted columns and drops NAs for Green_Density and Dino_Density.
+The two datasets below are used in models for algae density and mitotic index of zoochlorellae and zooxathellae. It filters out unwanted columns and drops NAs for Green_Density, Dino_Density, MI_Green and MI_Dino.
 
-```{r}
-Green_Density_data <- health_data %>% 
-  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
+```{r, warning=FALSE, message=FALSE}
+Green_Symbionts <- health_data %>% 
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
+  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021")) %>% 
   drop_na(Green_Density) %>% 
   drop_na(Dino_Density) %>% 
+  drop_na(MI_Green) %>% 
+  drop_na(MI_Dino) %>% 
   filter(Green_Density != 0)
 
-Dino_Density_data <- health_data %>% 
-  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
+Dino_Symbionts <- health_data %>% 
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
+  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021")) %>% 
   drop_na(Green_Density) %>% 
   drop_na(Dino_Density) %>% 
+  drop_na(MI_Green) %>% 
+  drop_na(MI_Dino) %>% 
   filter(Dino_Density != 0)
+```
+
+Checking Normality and Equal Variance:
+```{r, warning=FALSE, message=FALSE}
+#Green
+shapiro.test(Green_Symbionts$Green_Density)      #p-value < 0.05, not normal distribution
+bartlett.test(Green_Density ~ Treatment, Green_Symbionts)      #p-value < 0.05, does not meet assumption of equal variance
+
+#Dino
+shapiro.test(Dino_Symbionts$Dino_Density)      #p-value < 0.05, not normal distribution
+bartlett.test(Dino_Density ~ Treatment, Dino_Symbionts)      #p-value < 0.05, does not meet assumption of equal variance
 ```
 
 Checking Distributions:
 We first test distributions learned in class to see if they fit those with the normal data. We repeat this for both Green and Dino density.
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #Greens
-exp_test(Green_Density_data$Green_Density)         #p-value < 0.05
-gamma_test(Green_Density_data$Green_Density)       #p-value > 0.05, larger i can use, p = 0.123
-lnorm_test(Green_Density_data$Green_Density)       #p-value < 0.05
-normal_test(Green_Density_data$Green_Density)      #p-value < 0.05, not a normal distribution
-weibull_test(Green_Density_data$Green_Density)     #p-value > 0.05, larger i can use, p = 0.44
+exp_test(Green_Symbionts$Green_Density)         #p-value < 0.05
+gamma_test(Green_Symbionts$Green_Density)       #p-value > 0.05, larger i can use, p = 0.123
+lnorm_test(Green_Symbionts$Green_Density)       #p-value < 0.05
+normal_test(Green_Symbionts$Green_Density)      #p-value < 0.05, not a normal distribution
+weibull_test(Green_Symbionts$Green_Density)     #p-value > 0.05, larger i can use, p = 0.44
 
 #Use Weibull since p value is larger than gamma
-Green_Weibull <- histDist(Green_Density_data$Green_Density, "WEI", density = F, main = "Weibull")
+Green_Weibull <- histDist(Green_Symbionts$Green_Density, "WEI", density = F, main = "Weibull")
 
 #Dinos
-exp_test(Dino_Density_data$Dino_Density)           #p-value > 0.05
-gamma_test(Dino_Density_data$Dino_Density)         #p-value > 0.05, larger i can use, p = 0.6709
-lnorm_test(Dino_Density_data$Dino_Density)         #p-value < 0.05
-normal_test(Dino_Density_data$Dino_Density)        #p-value < 0.05, not a normal distribution
-weibull_test(Dino_Density_data$Dino_Density)       #p-value > 0.05, larger i can use, p = 0.774
+exp_test(Dino_Symbionts$Dino_Density)           #p-value > 0.05
+gamma_test(Dino_Symbionts$Dino_Density)         #p-value > 0.05, larger i can use, p = 0.6709
+lnorm_test(Dino_Symbionts$Dino_Density)         #p-value < 0.05
+normal_test(Dino_Symbionts$Dino_Density)        #p-value < 0.05, not a normal distribution
+weibull_test(Dino_Symbionts$Dino_Density)       #p-value > 0.05, larger i can use, p = 0.774
 
 #Use Gamma since p value is larger than weibull
-Dino_Gamma <- histDist(Dino_Density_data$Dino_Density, "GA", density = F, main = "Gamma")
+Dino_Gamma <- histDist(Dino_Symbionts$Dino_Density, "GA", density = F, main = "Gamma")
 ```
 
-Log Transformations:
-Next we run log transformations on our data and re-run the shapiro test to see if it has transformed our data to be more normal. We also mutate the data in order for the dataset to not contain 0s since we are running a log transformation. We repeat this for both Green and Dino density.
-```{r}
+Running Models:
+We chose to use our Weibull distribution for green density and Gamma distribution for dino density. Here we run our models. 
+```{r, warning=FALSE, message=FALSE}
 #Green
-Green_log <- Green_Density_data %>% mutate(log_data = log(abs(Green_Density + 0.01)))
+Green_Symbionts$orderTreatment = ordered(Green_Symbionts$Treatment, levels = c("Control", "25C", "30C"))
 
-shapiro.test(Green_log$log_data)      #p-value < 0.05, not normal distribution
+Green_Weibull_model <- gamlss(formula = Green_Density ~ Time_Point*Treatment + random(Species_ID), family = WEI(), data = Green_Symbionts, control = gamlss.control(n.cyc = 5))
+summary(Green_Weibull_model)
 
 #Dino
-Dino_log <- Dino_Density_data %>% mutate(log_data = log(abs(Dino_Density + 0.01)))
+Dino_Symbionts$orderTreatment = ordered(Dino_Symbionts$Treatment, levels = c("Control", "25C", "30C"))
 
-shapiro.test(Dino_log$log_data)      #p-value < 0.05, not normal distribution
+Dino_Gamma_model <- gamlss(formula = Dino_Density ~ Time_Point*Treatment + random(Species_ID), family = GA(), data = Dino_Symbionts, control = gamlss.control(n.cyc = 3))
+summary(Dino_Gamma_model)
 ```
+The green density data was run with a weibull distribution. This model shows significance in intercept, time point, 30C treatment, and Time point:Treatment 30C. 
+                        Estimate Std. Error t value Pr(>|t|)    
+(Intercept)              7.42698    0.41054  18.091 1.47e-09 ***
+Time_Point              -0.19724    0.05001  -3.944  0.00228 ** 
+Treatment25C            -0.24059    0.67763  -0.355  0.72924    
+Treatment30C             1.65762    0.50075   3.310  0.00691 ** 
+Time_Point:Treatment25C  0.15264    0.08077   1.890  0.08529 .  
+Time_Point:Treatment30C  0.18034    0.06491   2.778  0.01789 *  
 
-Gaussian Transformation:
-Both log transformations did not make the data normal, so I will try a Gaussian transformation. 
-```{r}
-#Green
-Green_gaussian <- Green_Density_data %>% mutate(gaus_data = Gaussianize(Green_Density_data$Green_Density, 's'))
-shapiro.test(Green_gaussian$gaus_data)      #p-value < 0.05, not normal distribution, p = 3.19e-05
-
-#Dino
-Dino_gaussian <- Dino_Density_data %>% mutate(gaus_data = Gaussianize(Dino_Density_data$Dino_Density, 's'))
-shapiro.test(Dino_gaussian$gaus_data)      #p-value > 0.05, normal distribution, p = 0.106
-
-Dino_gaussian_plot <- ggplot(Dino_gaussian, aes(x = gaus_data)) + 
-  geom_density() + 
-  theme_classic() + 
-  geom_vline(xintercept = 0, colour = "red")
-```
-The Gaussian transformation did not work on green density, when we ran a shapiro test for normality we got a p value smaller than 0.05. The transformation worked on the dino density. After visualizing the data, I think we will stick with the Weibell and Gamma distributions for green and dino density respectively. 
+The dino density data was run with a gamma distribution. This model shows significance in intercept, treatment 25C and treatment 30C. 
+                        Estimate Std. Error t value Pr(>|t|)    
+(Intercept)              8.91844    0.45195  19.733 2.59e-10 ***
+Time_Point               0.01343    0.05686   0.236  0.81735    
+Treatment25C            -2.59686    0.68533  -3.789  0.00271 ** 
+Treatment30C            -2.18176    0.55462  -3.934  0.00210 ** 
+Time_Point:Treatment25C  0.03933    0.08212   0.479  0.64088    
+Time_Point:Treatment30C -0.01309    0.07294  -0.179  0.86067   
 
 Plots:
 ```{r, warning=FALSE, message=FALSE}
@@ -282,27 +289,93 @@ dino_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "P
                               "11/13/2021" = "Recovery"))
 ```
 
-### Size Data
+### EXTRA DENSITY CALCULATIONS - NOT USING 
+Log Transformations:
+Next we run log transformations on our data and re-run the shapiro test to see if it has transformed our data to be more normal. We also mutate the data in order for the dataset to not contain 0s since we are running a log transformation. We repeat this for both Green and Dino density.
 ```{r, warning=FALSE, message=FALSE}
-shapiro.test(filtered_dates$Base_Diameter_mm) # p-value = 0.001, distribution is not normal
-bartlett.test(Base_Diameter_mm ~ Treatment, data = filtered_dates) # p-value = 0.30, yay equal variance
+#Green
+Green_log <- Green_Symbionts %>% mutate(log_data = log(abs(Green_Density + 0.01)))
+
+shapiro.test(Green_log$log_data)      #p-value < 0.05, not normal distribution
+
+#Dino
+Dino_log <- Dino_Symbionts %>% mutate(log_data = log(abs(Dino_Density + 0.01)))
+
+shapiro.test(Dino_log$log_data)      #p-value < 0.05, not normal distribution
+```
+
+Gaussian Transformation:
+Both log transformations did not make the data normal, so I will try a Gaussian transformation. 
+```{r, warning=FALSE, message=FALSE}
+#Green
+Green_gaussian <- Green_Symbionts %>% mutate(gaus_data = Gaussianize(Green_Symbionts$Green_Density, 's'))
+shapiro.test(Green_gaussian$gaus_data)      #p-value < 0.05, not normal distribution, p = 3.19e-05
+
+#Dino
+Dino_gaussian <- Dino_Symbionts %>% mutate(gaus_data = Gaussianize(Dino_Symbionts$Dino_Density, 's'))
+shapiro.test(Dino_gaussian$gaus_data)      #p-value > 0.05, normal distribution, p = 0.106
+
+Dino_gaussian_plot <- ggplot(Dino_gaussian, aes(x = gaus_data)) + 
+  geom_density() + 
+  theme_classic() + 
+  geom_vline(xintercept = 0, colour = "red")
+```
+The Gaussian transformation did not work on green density, when we ran a shapiro test for normality we got a p value smaller than 0.05. The transformation worked on the dino density. After visualizing the data, I think we will stick with the Weibell and Gamma distributions for green and dino density respectively.
+
+### Size Data
+```{r}
+Size_Data <- health_data %>% 
+  select(-c(Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Weight_Tentacle_mg, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Green_Density, Dino_Density, MI_Green, MI_Dino, Div_Green, Div_Dino)) %>%
+  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021")) %>% 
+  drop_na(Base_Diameter_mm)
+```
+
+Running test of normality and equal variance on size data. 
+```{r, warning=FALSE, message=FALSE}
+shapiro.test(Size_Data$Base_Diameter_mm) # p-value = 0.0002, distribution is not normal
+bartlett.test(Base_Diameter_mm ~ Treatment, data = filtered_dates) # p-value = 0.15, yay equal variance
 ```
 
 Checking Distribution:
 ```{r}
-exp_test(filtered_dates$Base_Diameter_mm)           #p-value < 0.05
-gamma_test(filtered_dates$Base_Diameter_mm)         #p-value > 0.05, p = 0.1874
-lnorm_test(filtered_dates$Base_Diameter_mm)         #p-value > 0.05, p = 0.4117
-normal_test(filtered_dates$Base_Diameter_mm)        #p-value < 0.05, not normal
-weibull_test(filtered_dates$Base_Diameter_mm)       #p-value < 0.05
+exp_test(Size_Data$Base_Diameter_mm)            #p-value < 0.05
+gamma_test(Size_Data$Base_Diameter_mm)          #p-value > 0.05, p = 0.1874
+lnorm_test(Size_Data$Base_Diameter_mm)          #p-value > 0.05, p = 0.4117
+normal_test(Size_Data$Base_Diameter_mm)         #p-value < 0.05, not normal
+weibull_test(Size_Data$Base_Diameter_mm)        #p-value < 0.05
 
-#Run lnorm since it has the higest p value
-Size_lnorm <- histDist(filtered_dates$Base_Diameter_mm, "LOGNO", density = T, main = "lNorm")
+# Run lnorm since it has the higest p value
+Size_lnorm <- histDist(Size_Data$Base_Diameter_mm, "LOGNO", density = T, main = "lNorm")
+
+#which has the best distribution? - compare AIC values
+Size_lnorm <- histDist(Size_Data$Base_Diameter_mm, "LOGNO", density = T, main = "lNorm")
+#AIC = 880.625
+Feeding_Gamma <- histDist(Size_Data$Base_Diameter_mm, "GA", density = F, main = "Gamma")
+#AIC = 883.161
 ```
+
+Running Models:
+We are going to run a lNorm model on our size data because the p value is larger and AIC value is smaller. 
+
+```{r}
+Size_Data$orderTreatment = ordered(Size_Data$Treatment, levels = c("Control", "25C", "30C"))
+
+Size_lNorm_model <- gamlss(formula = Base_Diameter_mm ~ Time_Point*Treatment + random(Species_ID), family = LOGNO(), data = Size_Data, control = gamlss.control(n.cyc = 2))
+summary(Size_lNorm_model)
+```
+We have significance in our 30C treatment. 
+                         Estimate Std. Error t value Pr(>|t|)    
+(Intercept)              3.867824   0.026092 148.241  < 2e-16 ***
+Time_Point               0.009303   0.003279   2.837 0.006080 ** 
+Treatment25C             0.059564   0.036145   1.648 0.104241    
+Treatment30C             0.124800   0.036145   3.453 0.000986 ***
+Time_Point:Treatment25C -0.005368   0.004571  -1.174 0.244581    
+Time_Point:Treatment30C -0.004736   0.004571  -1.036 0.304031 
 
 **Size Graph**
 ```{r, warning=FALSE, message=FALSE}
-ggplot(filtered_dates, aes(x = Date, y = Base_Diameter_mm)) +
+ggplot(Size_Data, aes(x = Date, y = Base_Diameter_mm)) +
   geom_boxplot() +
   facet_grid(. ~ Treatment) +
   theme_test()
@@ -310,13 +383,55 @@ ggplot(filtered_dates, aes(x = Date, y = Base_Diameter_mm)) +
 
 ### Feeding Data
 ```{r, warning=FALSE, message=FALSE}
-shapiro.test(filtered_dates$Feeding_Time_Min)      #p-value < 0.05, not normal distribution
-bartlett.test(Feeding_Time_Min ~ Treatment, filtered_dates)      #p-value < 0.01, does not meet assumption of equal variance
+Feeding_Data <- health_data %>% 
+  select(-c(Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Weight_Tentacle_mg, Green_Cells, Dino_Cells, Base_Diameter_mm, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Green_Density, Dino_Density, MI_Green, MI_Dino, Div_Green, Div_Dino)) %>%
+  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021")) %>% 
+  drop_na(Feeding_Time_Min)
+```
 
-Feeding_Data <- filtered_dates %>% 
-  filter(Date != "11/13/2021") %>% 
-  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021"))
-  
+Running test of normality and equal variance on feeding data. 
+```{r, warning=FALSE, message=FALSE}
+shapiro.test(Feeding_Data$Feeding_Time_Min)                      # p-value < 0.05, distribution is not normal
+bartlett.test(Feeding_Time_Min ~ Treatment, data = Feeding_Data) # p-value < 0.05, no equal varaince 
+```
+
+The data is not equal or normal, so we're are going to check distributions to see what fits best. 
+```{r, warning=FALSE, message=FALSE}
+exp_test(Feeding_Data$Feeding_Time_Min)            #p-value < 0.05
+gamma_test(Feeding_Data$Feeding_Time_Min)          #p-value > 0.05, p = 0.3717, usable
+lnorm_test(Feeding_Data$Feeding_Time_Min)          #p-value > 0.05, p = 0.6937, usable
+normal_test(Feeding_Data$Feeding_Time_Min)         #p-value < 0.05, not normal
+weibull_test(Feeding_Data$Feeding_Time_Min)        #p-value > 0.05, p = 0.088, usable
+
+#which has the best distribution? - compare AIC values
+Feeding_lnorm <- histDist(Feeding_Data$Feeding_Time_Min, "LOGNO", density = T, main = "lNorm") 
+#AIC = 112.738
+Feeding_Gamma <- histDist(Feeding_Data$Feeding_Time_Min, "GA", density = F, main = "Gamma")
+#AIC = 116.789
+Green_Weibull <- histDist(Feeding_Data$Feeding_Time_Min, "WEI", density = F, main = "Weibull")
+#AIC = 115.143
+```
+
+Running model:
+We are going to use the lnorm distribution because the p value is larger and AIC value is smaller.
+```{r, warning=FALSE, message=FALSE}
+Feeding_Data$orderTreatment = ordered(Feeding_Data$Treatment, levels = c("Control", "25C", "30C"))
+
+Feeding_lNorm_model <- gamlss(formula = Feeding_Time_Min ~ Time_Point*Treatment + random(Species_ID), family = LOGNO(), data = Feeding_Data, control = gamlss.control(n.cyc = 2))
+summary(Size_lNorm_model)
+```
+We saw significance in feeding for the 30C treatment
+                         Estimate Std. Error t value Pr(>|t|)    
+(Intercept)              3.867824   0.026092 148.241  < 2e-16 ***
+Time_Point               0.009303   0.003279   2.837 0.006080 ** 
+Treatment25C             0.059564   0.036145   1.648 0.104241    
+Treatment30C             0.124800   0.036145   3.453 0.000986 ***
+Time_Point:Treatment25C -0.005368   0.004571  -1.174 0.244581    
+Time_Point:Treatment30C -0.004736   0.004571  -1.036 0.304031  
+
+Plot:
+```{r, warning=FALSE, message=FALSE}
 feeding_plot <- ggplot(Feeding_Data, aes(x = Date, y = Feeding_Time_Min, fill = Treatment)) +
   geom_boxplot(alpha=0.85) +
   xlab("Event") +
@@ -326,21 +441,6 @@ feeding_plot <- ggplot(Feeding_Data, aes(x = Date, y = Feeding_Time_Min, fill = 
   theme_test()
 feeding_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
                               "11/13/2021" = "Recovery"))
-```
-
-Checking Distributions:
-```{r}
-Feeding_data <- health_data %>% 
-  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True, Green_Density, Dino_Density, Time_Point)) %>% 
-  drop_na(Feeding_Time_Min) 
-
-exp_test(Feeding_data$Feeding_Time_Min)           #p-value < 0.05
-gamma_test(Feeding_data$Feeding_Time_Min)         #p-value > 0.05, p = 0.1895
-lnorm_test(Feeding_data$Feeding_Time_Min)         #p-value > 0.05, p = 0.5839
-normal_test(Feeding_data$Feeding_Time_Min)        #p-value < 0.05, not normal
-weibull_test(Feeding_data$Feeding_Time_Min)       #p-value < 0.05
-
-Feeding_lnorm <- histDist(Feeding_data$Feeding_Time_Min, "LOGNO", density = T, main = "lNorm")
 ```
 
 ## Heat Data
