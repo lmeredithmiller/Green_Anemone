@@ -69,20 +69,22 @@ PAM_individuals <- health_data %>%
   distinct(Species_ID)
 
 PAM_data <- health_data %>% 
-  select(-c(Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, 
+  select(-c(Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles,
              Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, 
-             Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Div_Green, Div_Dino, MI_Green,
+             Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Div_Green, Div_Dino,
+            MI_Green,
              MI_Dino)) %>%  
   drop_na(PAM_avg) %>%
   group_by(Treatment, Date) %>% 
   mutate(PAM_per_Treatment = mean(PAM_avg))
 
-# match(PAM_individuals, PAM_data$Species_ID)
+filtered_PAM_data = PAM_individuals %>%
+  left_join(PAM_data)
 ```
   
 ```{r, warning=FALSE, message=FALSE}
-shapiro.test(PAM_data$PAM_avg) # p-value < 0.05, distribution is not normal
-bartlett.test(PAM_avg ~ Treatment, data = PAM_data) # p-value < 0.05, does not meet equal variance assumptions
+shapiro.test(filtered_PAM_data$PAM_avg) # p-value < 0.05, distribution is not normal
+bartlett.test(PAM_avg ~ Treatment, data = filtered_PAM_data) # p-value < 0.05, does not meet equal variance assumptions
 ```
 
 Our data does not meet the assumption and therefore we will not be able to use tests such as ANOVA and linear models. 
@@ -91,11 +93,11 @@ Checking distribution:
 If we get get a p-value < 0.5, then they is a significant differnce between the data and the distribution, and therefore this model should not be used in our analyse.
 
 ```{r, warning=FALSE, message=FALSE}
-exp_test(PAM_data$PAM_avg)        #p-value < 2.2e-16, cannot use
-gamma_test(PAM_data$PAM_avg)      #p-value < 0.00334, cannot use
-lnorm_test(PAM_data$PAM_avg)      #p-value = 1.97e-07, cannot use
-normal_test(PAM_data$PAM_avg)     #p-value = 0.002704, cannot use
-weibull_test(PAM_data$PAM_avg)    #p-value < 0.05, cannot use
+exp_test(filtered_PAM_data$PAM_avg)        #p-value < 2.2e-16, cannot use
+gamma_test(filtered_PAM_data$PAM_avg)      #p-value < 2.2e-16, cannot use
+lnorm_test(filtered_PAM_data$PAM_avg)      #p-value < 2.2e-16, cannot use
+normal_test(filtered_PAM_data$PAM_avg)     #p-value = 1.706e-06, cannot use
+weibull_test(filtered_PAM_data$PAM_avg)    #p-value < 2.2e-16, cannot use
 ```
 
 Since we cannot use any that we learned in class, we are using fitDist to check many distributions at once. fitDist showed that the SHASH distribution fits the best with our data, so we can use histDist to visualize it. 
@@ -104,7 +106,7 @@ Since we cannot use any that we learned in class, we are using fitDist to check 
 ```{r, warning=FALSE, message=FALSE}
 #Look for anemone resiliancy Fv/Fm
 
-PAM_visual <- fitDist(PAM_avg, data = PAM_data, type = "realAll", try.gamlss = T)
+PAM_visual <- fitDist(PAM_avg, data = filtered_PAM_data, type = "realAll", try.gamlss = T)
 PAM_visual
 
 #Visualizing fistDist
@@ -115,6 +117,7 @@ histDist(y, family = SHASH, density = FALSE,
         fg.hist = rainbow(12)[9])
 ```
 
+#### CHANGE THIS
 Initially we ran this data and it told us to use a SHASH distribution. [Family:  c("SHASH", "Sinh-Arcsinh"), Fitting method: "nlminb" with 12% error, Call:  gamlssML(formula = y, family = DIST[i])]. After running the data again with updates to our PAM threshold, it was suggested to use the BCEP distribution [Family:  c("BCPE", "Box-Cox Power Exponential"), Call:  gamlss(formula = y ~ 1, family = DIST[i], trace = FALSE)]. After visualizing both the SHASH and BCEP distributions with our updated data, we decided to stick with SHASH since the distribution seemed to fit better. 
 
 ```{r, warning=FALSE, message=FALSE}
@@ -132,7 +135,7 @@ Findings:
 
 **PAM graphs**
 ```{r}
-PAM_avg_plot <- ggplot(data = PAM_data, aes(x = Time_Point, y = PAM_per_Treatment, color = Treatment)) +
+PAM_avg_plot <- ggplot(data = filtered_PAM_data, aes(x = Time_Point, y = PAM_per_Treatment, color = Treatment)) +
   geom_line() +
   geom_point(size = 1) +
   xlab("Time (Days)") +
@@ -140,8 +143,8 @@ PAM_avg_plot <- ggplot(data = PAM_data, aes(x = Time_Point, y = PAM_per_Treatmen
   scale_color_manual(values = cols_for_heat)  +
   scale_fill_manual(values = cols_for_heat) +
   theme_test() +
-  geom_segment(aes(x = 2.5, y = 0.2, xend = 2.5, yend = 0.75), size = 0.5 ,linetype = 2, colour = "black") +
-  geom_segment(aes(x = 8.5, y = 0.2, xend = 8.5, yend =0.75), size= 0.35, linetype = 2, colour = "black")
+  geom_segment(aes(x = 2.75, y = 0.2, xend = 2.75, yend = 0.75), size = 0.5 ,linetype = 2, colour = "black") +
+  geom_segment(aes(x = 8.25, y = 0.2, xend = 8.25, yend =0.75), size= 0.35, linetype = 2, colour = "black")
 PAM_avg_plot
 ```
 
