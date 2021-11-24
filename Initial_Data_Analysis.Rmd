@@ -289,6 +289,12 @@ dino_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "P
                               "11/13/2021" = "Recovery"))
 ```
 
+### Mitotic Index
+```{r}
+shapiro.test(filtered_dates$Feeding_Time_Min)      #p-value < 0.05, not normal distribution
+bartlett.test(Feeding_Time_Min ~ Treatment, filtered_dates)      #p-value < 0.01, does not meet assumption of equal variance
+```
+
 ### EXTRA DENSITY CALCULATIONS - NOT USING 
 Log Transformations:
 Next we run log transformations on our data and re-run the shapiro test to see if it has transformed our data to be more normal. We also mutate the data in order for the dataset to not contain 0s since we are running a log transformation. We repeat this for both Green and Dino density.
@@ -321,6 +327,7 @@ Dino_gaussian_plot <- ggplot(Dino_gaussian, aes(x = gaus_data)) +
   geom_vline(xintercept = 0, colour = "red")
 ```
 The Gaussian transformation did not work on green density, when we ran a shapiro test for normality we got a p value smaller than 0.05. The transformation worked on the dino density. After visualizing the data, I think we will stick with the Weibell and Gamma distributions for green and dino density respectively.
+
 
 ### Size Data
 ```{r}
@@ -450,6 +457,8 @@ Includes temperature during heatwave and behavioral responses (open vs closed)
 heat_data <- heat_data %>% 
   mutate(Open_Closed = as.factor(Open_Closed), Bucket = as.factor(Bucket), 
          Treatment = as.factor(Treatment), Field_Site = as.factor(Field_Site)) %>% 
+  mutate(Open_Closed = fct_relevel(Open_Closed, "Open", "Partial", "Closed")) %>% 
+  mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C")) %>% 
   group_by(Treatment, Time_Block) %>% 
   mutate(Temp_avg = mean(Bucket_Temp))
 ```
@@ -477,8 +486,6 @@ summary(as_model)
 ```{r, warning=FALSE, message=FALSE}
 cols_for_behaviour = c("Open" = "bisque1", "Partial" = "brown2", "Closed" = "darkred")
 behaviour_data <- heat_data %>% 
-  mutate(Open_Closed = fct_relevel(Open_Closed, "Open", "Partial", "Closed")) %>% 
-  mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C")) %>% 
   group_by(Day, Treatment, Time_Block) %>% 
   count(Open_Closed)
 
