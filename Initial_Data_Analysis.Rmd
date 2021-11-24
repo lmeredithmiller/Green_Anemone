@@ -268,7 +268,7 @@ Time_Point:Treatment30C -0.01309    0.07294  -0.179  0.86067
 
 Plots:
 ```{r, warning=FALSE, message=FALSE}
-green_plot <- ggplot(filtered_dates, aes(x = Date, y = Green_Density)) +
+green_plot <- ggplot(Green_Symbionts, aes(x = Date, y = Green_Density)) +
   geom_boxplot() +
   xlab("Event") +
   ylab("Green algae density") +
@@ -279,7 +279,7 @@ green_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "
 ```
 
 ```{r, warning=FALSE, message=FALSE}
-dino_plot <- ggplot(filtered_dates, aes(x = Date, y = Dino_Density)) +
+dino_plot <- ggplot(Dino_Symbionts, aes(x = Date, y = Dino_Density)) +
   geom_boxplot() +
   xlab("Event") +
   ylab("Dinoflagelatte density") +
@@ -341,7 +341,7 @@ Size_Data <- health_data %>%
 Running test of normality and equal variance on size data. 
 ```{r, warning=FALSE, message=FALSE}
 shapiro.test(Size_Data$Base_Diameter_mm) # p-value = 0.0002, distribution is not normal
-bartlett.test(Base_Diameter_mm ~ Treatment, data = filtered_dates) # p-value = 0.15, yay equal variance
+bartlett.test(Base_Diameter_mm ~ Treatment, data = Size_Data) # p-value = 0.15, yay equal variance
 ```
 
 Checking Distribution:
@@ -400,7 +400,7 @@ Feeding_Data <- health_data %>%
 Running test of normality and equal variance on feeding data. 
 ```{r, warning=FALSE, message=FALSE}
 shapiro.test(Feeding_Data$Feeding_Time_Min)                      # p-value < 0.05, distribution is not normal
-bartlett.test(Feeding_Time_Min ~ Treatment, data = Feeding_Data) # p-value < 0.05, no equal varaince 
+bartlett.test(Feeding_Time_Min ~ Treatment, data = Feeding_Data) # p-value < 0.05, no equal variance 
 ```
 
 The data is not equal or normal, so we're are going to check distributions to see what fits best. 
