@@ -1,6 +1,10 @@
 # Green_Anemone
 
-Authors: Meredith Miller and Joan Moreaux
+Authors: 
+
+Meredith Miller (Undergraduate Student, Simon Fraser University (SFU), lmm23@sfu.ca)
+
+Joan Moreaux (Undergraduate Student, University of British Columbia (UBC))
 
 Description of Project:
 
