@@ -19,6 +19,7 @@ library(fGarch)
 library(LambertW)
 library(ordinal)
 library(cowplot)
+library(here)
 library(tidyverse)
 ```
 
@@ -121,7 +122,7 @@ Findings:
 PAM_avg_plot <- ggplot(data = filtered_PAM_data, aes(x = Time_Point, y = PAM_per_Treatment, color = Treatment)) +
   geom_line() +
   geom_point(size = 1) +
-  xlab("Time (Days)") +
+  xlab("Time Point") +
   ylab("PAM Measurements") +
   scale_color_manual(values = cols_for_heat)  +
   scale_fill_manual(values = cols_for_heat) +
@@ -129,10 +130,6 @@ PAM_avg_plot <- ggplot(data = filtered_PAM_data, aes(x = Time_Point, y = PAM_per
   geom_segment(aes(x = 2.75, y = 0.2, xend = 2.75, yend = 0.75), size = 0.5 ,linetype = 2, colour = "black") +
   geom_segment(aes(x = 8.25, y = 0.2, xend = 8.25, yend =0.75), size= 0.35, linetype = 2, colour = "black")
 PAM_avg_plot
-```
-
-```{r}
-
 ```
 
 ### Symbiont Data
@@ -430,7 +427,7 @@ feeding_plot <- ggplot(Feeding_Data, aes(x = Date, y = Feeding_Time_Min, fill = 
   scale_color_manual(values = cols_for_heat) +
   scale_fill_manual(values = cols_for_heat) +
   theme_test()
-feeding_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+feeding_plot <- feeding_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
                               "11/13/2021" = "Recovery"))
 ```
 
@@ -462,8 +459,8 @@ heat_plot
 
 ### Ordinal Regression
 ```{r}
-as_model = clmm(Open_Closed ~ Treatment + (1 | Bucket) + (1 | Species_ID), data = heat_data)
-summary(as_model)
+ord_model = clmm(Open_Closed ~ Treatment + (1 | Bucket) + (1 | Species_ID), data = heat_data)
+summary(ord_model)
 ```
 
 **Open/Closed Graph**
@@ -480,7 +477,8 @@ behaviour_plot <- ggplot(data = behaviour_data, aes(x = Time_Block, y = n, fill 
   ylab("Frequency") +
   scale_fill_brewer(palette = "Reds") +
   theme_cowplot()
-behaviour_plot + labs(fill = "Behaviour Response")
-```
+behaviour_plot <- behaviour_plot + labs(fill = "Behaviour Response")
 
+ggsave(here("./images/behaviour_plot.png"), behaviour_plot)
+```
 
