@@ -100,11 +100,12 @@ bartlett.test(Green_Density ~ Treatment, Green_Symbionts)      #p-value < 0.05, 
 
 #Dino
 shapiro.test(Dino_Symbionts$Dino_Density)      #p-value < 0.05, not normal distribution
-bartlett.test(Dino_Density ~ Treatment, Dino_Symbionts)      #p-value < 0.05, does not meet assumption of equal variance
+bartlett.test(Dino_Density ~ Treatment, Dino_Symbionts)      #p-value < 0.05, meets assumption of equal variance
 ```
 
 Checking Distributions:
 We first test distributions learned in class to see if they fit those with the normal data. We repeat this for both Green and Dino density.
+
 ```{r, warning=FALSE, message=FALSE}
 #Greens
 exp_test(Green_Symbionts$Green_Density)         #p-value < 0.05
@@ -173,6 +174,14 @@ green_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "
                               "11/13/2021" = "Recovery"))
 ```
 
+```{r}
+ggplot(filter(Green_Symbionts, Date ==  "11/9/2021"), aes(x = Treatment, y = Green_Density)) +
+  geom_boxplot() +
+  xlab("Event") +
+  ylab("Green algae density") +
+  theme_test()
+```
+
 ```{r, warning=FALSE, message=FALSE}
 dino_plot <- ggplot(Dino_Symbionts, aes(x = Date, y = Dino_Density)) +
   geom_boxplot() +
@@ -182,6 +191,14 @@ dino_plot <- ggplot(Dino_Symbionts, aes(x = Date, y = Dino_Density)) +
   theme_test()
 dino_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
                               "11/13/2021" = "Recovery"))
+```
+
+```{r}
+ggplot(filter(Dino_Symbionts, Date ==  "11/9/2021"), aes(x = Treatment, y = Dino_Density)) +
+  geom_boxplot() +
+  xlab("Event") +
+  ylab("Dinoflagellate algae density") +
+  theme_test()
 ```
 
 ### Mitotic Index
