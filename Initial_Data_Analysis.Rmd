@@ -20,6 +20,7 @@ library(LambertW)
 library(ordinal)
 library(cowplot)
 library(here)
+library(plotrix)
 library(tidyverse)
 ```
 
@@ -89,15 +90,20 @@ The two datasets below are used in models for algae density and mitotic index of
 
 ```{r, warning=FALSE, message=FALSE}
 Green_Symbionts <- health_data %>% 
-  select(-c(Event, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
+  select(-c(Event, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g,
+            Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start,
+            Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
   filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
   mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021")) %>% 
+  mutate(Green_Density_Log = log(Green_Density)) %>% 
   drop_na(Green_Density) %>% 
   drop_na(Dino_Density) %>% 
   drop_na(MI_Green) %>% 
   drop_na(MI_Dino) %>% 
   filter(Green_Density != 0) %>% 
-  mutate(Acclimation_Period = as.factor(Acclimation_Period))
+  mutate(Acclimation_Period = as.factor(Acclimation_Period)) %>% 
+  group_by(Treatment, Date) %>% 
+  mutate(Mean_Green_Log = mean(Green_Density_Log), SE_Green_Log = std.error(Green_Density_Log))
 
 Dino_Symbionts <- health_data %>% 
   select(-c(Event, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
@@ -202,11 +208,10 @@ ggplot(filter(Green_Symbionts, Date ==  "11/9/2021"), aes(x = Treatment, y = log
 ```
 
 ```{r, warning=FALSE, message=FALSE}
-dino_plot <- ggplot(Dino_Symbionts, aes(x = Date, y = Dino_Density)) +
+dino_plot <- ggplot(Dino_Symbionts, aes(x = Date, y = Dino_Density, fill = Treatment)) +
   geom_boxplot() +
   xlab("Event") +
   ylab("Dinoflagelatte density") +
-  facet_grid(. ~ Treatment) +
   theme_test()
 dino_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
                               "11/13/2021" = "Recovery"))
@@ -235,6 +240,26 @@ delta_dino_density <- ggplot(delta_data, aes(x = Treatment, y = Delta_Dino_Densi
   theme_test()
 delta_dino_density
 ```
+
+```{r}
+green_over_time <- ggplot(data = Green_Symbionts, aes(x=Date, y = Mean_Green_Log, colour = Treatment, group = Treatment)) +
+  theme_classic() +
+  # geom_vline(xintercept = as.POSIXct("2021-11-06 09:00:00"),
+  #            linetype = "dotted", 
+  #            size = 1) +
+  # geom_vline(xintercept = as.POSIXct("2021-11-08 16:00:00"), 
+  #            linetype = "dotted", 
+  #            size = 1)+
+  geom_point(size=2.5) +
+  geom_linerange(aes(ymin = Mean_Green_Log - SE_Green_Log, 
+                    ymax = Mean_Green_Log + SE_Green_Log)) +
+  geom_line() +
+  labs(x="Date", 
+       y = "Mean Green") +
+  scale_fill_manual(values = cols_for_heat) +
+  scale_colour_manual(values = cols_for_heat)
+green_over_time
+``````````````
 
 ### Mitotic Index
 ```{r}
