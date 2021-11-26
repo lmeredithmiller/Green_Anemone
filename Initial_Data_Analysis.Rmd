@@ -55,7 +55,7 @@ PAM_individuals <- health_data %>%
   distinct(Species_ID)
 
 PAM_data <- health_data %>% 
-  select(-c(Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles,
+  select(-c(Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles,
             Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, 
             Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Div_Green, Div_Dino, 
             MI_Green, MI_Dino)) %>%
