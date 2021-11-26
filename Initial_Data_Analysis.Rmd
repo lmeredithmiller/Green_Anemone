@@ -66,7 +66,7 @@ Dino_Threshold <- health_data %>%
 From the data above, we decide that the threshold for PAM will be 1000 cells per mg (symbiont density).
 
 ### Density Data
-The two datasets below are used in models for algae density and mitotic index of zoochlorellae and zooxathellae. It filters out unwanted columns and drops NAs for Green_Density, Dino_Density, MI_Green and MI_Dino.
+The two datasets below are used in models for algae density and mitotic index of zoochlorellae and zooxanthellae. It filters out unwanted columns and drops NAs for Green_Density, Dino_Density, MI_Green and MI_Dino.
 
 ```{r, warning=FALSE, message=FALSE}
 Green_Symbionts <- health_data %>% 
@@ -133,16 +133,17 @@ We chose to use our Weibull distribution for green density and Gamma distributio
 #Green
 Green_Symbionts$orderTreatment = ordered(Green_Symbionts$Treatment, levels = c("Control", "25C", "30C"))
 
-Green_Weibull_model <- gamlss(formula = Green_Density ~ Time_Point*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = WEI(), data = Green_Symbionts, control = gamlss.control(n.cyc = 8))
+Green_Weibull_model <- gamlss(formula = Green_Density ~ Date*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = WEI(), data = Green_Symbionts, control = gamlss.control(n.cyc = 10))
 summary(Green_Weibull_model)
 
 #Dino
 Dino_Symbionts$orderTreatment = ordered(Dino_Symbionts$Treatment, levels = c("Control", "25C", "30C"))
 
-Dino_Gamma_model <- gamlss(formula = Dino_Density ~ Time_Point*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = GA(), data = Dino_Symbionts, control = gamlss.control(n.cyc = 3))
+Dino_Gamma_model <- gamlss(formula = Dino_Density ~ Date*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = GA(), data = Dino_Symbionts, control = gamlss.control(n.cyc = 3))
 summary(Dino_Gamma_model)
 ```
 The green density data was run with a weibull distribution. This model shows significance in 30C treatment.
+Data from running with time points
                          Estimate Std. Error t value Pr(>|t|)    
 (Intercept)              6.891324   0.256032  26.916  < 2e-16 ***
 Time_Point               0.022283   0.032057   0.695    0.494    
@@ -150,15 +151,40 @@ Treatment25C             0.151205   0.410432   0.368    0.716
 Treatment30C             1.814193   0.330629   5.487 1.43e-05 ***
 Time_Point:Treatment25C -0.075946   0.051368  -1.478    0.153    
 Time_Point:Treatment30C -0.004658   0.042604  -0.109    0.914   
+.
+Data from running with dates
+                            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)                  7.02648    0.20520  34.242  < 2e-16 ***
+Date11/9/2021               -0.17523    0.27804  -0.630   0.5354    
+Date11/13/2021               0.28886    0.28856   1.001   0.3283    
+Treatment25C                -0.12147    0.32291  -0.376   0.7106    
+Treatment30C                 1.47524    0.26344   5.600 1.53e-05 ***
+Date11/9/2021:Treatment25C   0.05102    0.45057   0.113   0.9109    
+Date11/13/2021:Treatment25C -0.83396    0.44295  -1.883   0.0738 .  
+Date11/9/2021:Treatment30C   0.13530    0.38302   0.353   0.7275    
+Date11/13/2021:Treatment30C  0.32660    0.38314   0.852   0.4037   
 
 The dino density data was run with a gamma distribution. This model shows significance in 25C treatment. 
+Data from running with time points
                         Estimate Std. Error t value Pr(>|t|)    
 (Intercept)              8.12451    0.31562  25.742  < 2e-16 ***
 Time_Point              -0.02759    0.03988  -0.692  0.49568    
 Treatment25C            -1.46697    0.49470  -2.965  0.00674 ** 
 Treatment30C            -0.70693    0.40737  -1.735  0.09551 .  
 Time_Point:Treatment25C  0.09932    0.06185   1.606  0.12139    
-Time_Point:Treatment30C -0.03156    0.05274  -0.598  0.55519    
+Time_Point:Treatment30C -0.03156    0.05274  -0.598  0.55519
+.
+Data from running with dates
+                            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)                  8.06079    0.25027  32.208  < 2e-16 ***
+Date11/9/2021               -0.16934    0.34106  -0.496  0.62449    
+Date11/13/2021              -0.23477    0.35394  -0.663  0.51405    
+Treatment25C                -1.32556    0.39574  -3.350  0.00291 ** 
+Treatment30C                -0.74465    0.32308  -2.305  0.03104 *  
+Date11/9/2021:Treatment25C   0.43494    0.55161   0.788  0.43886    
+Date11/13/2021:Treatment25C  1.03874    0.54261   1.914  0.06874 .  
+Date11/9/2021:Treatment30C  -0.23333    0.46976  -0.497  0.62435    
+Date11/13/2021:Treatment30C  0.03936    0.46977   0.084  0.93399  
 
 
 Plots:
