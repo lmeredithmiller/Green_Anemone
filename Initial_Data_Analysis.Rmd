@@ -48,6 +48,25 @@ health_data <- health_data %>%
 cols_for_heat = c("25C" = "brown2", "30C" = "darkred", "Control" = "azure4")
 ```
 
+```{r}
+nov_05 <- health_data %>% 
+  filter(Date == "11/5/2021")
+
+nov_09 <- health_data %>% 
+  filter(Date == "11/9/2021")
+
+delta_data = nov_05 %>%
+  left_join(nov_09, by = "Species_ID") %>%
+  mutate(Delta_Green_Density = Green_Density.y - Green_Density.x,
+         Delta_Dino_Density = Dino_Density.y - Dino_Density.x,
+         Field_Site = Field_Site.x,
+         Acclimation_Period = Acclimation_Period.x,
+         Treatment = Treatment.x) %>% 
+  drop_na(Delta_Dino_Density, Delta_Green_Density) %>%
+  select(Species_ID, Field_Site, Acclimation_Period, Treatment, Delta_Green_Density, Delta_Dino_Density)
+```
+
+
 ### Symbiont Data
 ```{r, warning=FALSE, message=FALSE}
 Green_Threshold <- health_data %>% 
@@ -175,9 +194,9 @@ green_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "
 ```
 
 ```{r}
-ggplot(filter(Green_Symbionts, Date ==  "11/9/2021"), aes(x = Treatment, y = Green_Density)) +
-  geom_boxplot() +
-  xlab("Event") +
+ggplot(filter(Green_Symbionts, Date ==  "11/9/2021"), aes(x = Treatment, y = log(Green_Density + 1))) +
+  geom_boxplot() #+
+  xlab("Treatment") +
   ylab("Green algae density") +
   theme_test()
 ```
@@ -199,6 +218,22 @@ ggplot(filter(Dino_Symbionts, Date ==  "11/9/2021"), aes(x = Treatment, y = Dino
   xlab("Event") +
   ylab("Dinoflagellate algae density") +
   theme_test()
+```
+
+```{r}
+delta_green_density <- ggplot(delta_data, aes(x = Treatment, y = Delta_Green_Density)) +
+  geom_boxplot() +
+  ylab("Delta green algae density") +
+  theme_test()
+delta_green_density
+```
+
+```{r}
+delta_dino_density <- ggplot(delta_data, aes(x = Treatment, y = Delta_Dino_Density)) +
+  geom_boxplot() +
+  ylab("Delta dinoflagellate density") +
+  theme_test()
+delta_dino_density
 ```
 
 ### Mitotic Index
@@ -445,6 +480,7 @@ feeding_plot <- ggplot(Feeding_Data, aes(x = Date, y = Feeding_Time_Min, fill = 
   theme_test()
 feeding_plot <- feeding_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
                               "11/13/2021" = "Recovery"))
+feeding_plot
 ```
 
 ## Heat Data
