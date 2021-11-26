@@ -184,12 +184,6 @@ dino_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "P
                               "11/13/2021" = "Recovery"))
 ```
 
-### Mitotic Index
-```{r}
-shapiro.test(filtered_dates$Feeding_Time_Min)      #p-value < 0.05, not normal distribution
-bartlett.test(Feeding_Time_Min ~ Treatment, filtered_dates)      #p-value < 0.01, does not meet assumption of equal variance
-```
-
 ### EXTRA DENSITY CALCULATIONS - NOT USING 
 Log Transformations:
 Next we run log transformations on our data and re-run the shapiro test to see if it has transformed our data to be more normal. We also mutate the data in order for the dataset to not contain 0s since we are running a log transformation. We repeat this for both Green and Dino density.
@@ -222,6 +216,51 @@ Dino_gaussian_plot <- ggplot(Dino_gaussian, aes(x = gaus_data)) +
   geom_vline(xintercept = 0, colour = "red")
 ```
 The Gaussian transformation did not work on green density, when we ran a shapiro test for normality we got a p value smaller than 0.05. The transformation worked on the dino density. After visualizing the data, I think we will stick with the Weibell and Gamma distributions for green and dino density respectively.
+
+### Mitotic Index Data
+```{r}
+MI_Data <- health_data %>% 
+  select(-c(Event, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
+  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021")) %>% 
+  drop_na(Green_Density) %>% 
+  drop_na(Dino_Density) %>% 
+  drop_na(MI_Green) %>% 
+  drop_na(MI_Dino) %>% 
+  mutate(Acclimation_Period = as.factor(Acclimation_Period))
+  
+#Green
+shapiro.test(MI_Data$MI_Green)      #p-value < 0.05, not normal distribution
+bartlett.test(MI_Green ~ Treatment, MI_Data)      #p-value < 0.05, does not meet assumption of equal variance
+
+#Dino
+shapiro.test(MI_Data$MI_Dino)      #p-value < 0.05, not normal distribution
+bartlett.test(MI_Dino ~ Treatment, MI_Data)      #p-value < 0.05, does not meet assumption of equal variance
+```
+
+Checking Distributions:
+We tried a log and gaussian transformation and both did not work, so we are running these models.
+
+MI GREEN AND MI DINO NOT FOUND *** trouble shoot 
+```{r, warning=FALSE, message=FALSE}
+#Greens
+exp_test(MI_Data$MI_Green)         #p-value < NA
+gamma_test(MI_Data$MI_Green)       #p-value > NA
+lnorm_test(MI_Data$MI_Green)       #p-value < NA
+normal_test(MI_Data$MI_Green)      #p-value < 0.05, not normal
+weibull_test(MI_Data$MI_Green)     #p-value > NA
+
+MIGreen_fit <- fitDist(MI_Green, Data = MI_Data, type = "realAll", try.gamlss = T)
+
+#Dinos
+exp_test(MI_Data$MI_Dino)           #p-value > NA
+gamma_test(MI_Data$MI_Dino)         #p-value > NA
+lnorm_test(MI_Data$MI_Dino)         #p-value < NA
+normal_test(MI_Data$MI_Dino)        #p-value < 0.05, not normal
+weibull_test(MI_Data$MI_Dino)       #p-value > NA
+
+MIDino_fit <- fitDist(MI_Dino, Data = MI_Data, type = "realAll", try.gamlss = T)
+```
 
 ### PAM data
 ```{r}
