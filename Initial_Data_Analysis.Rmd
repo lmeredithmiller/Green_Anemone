@@ -412,7 +412,7 @@ We are going to run a lNorm model on our size data because the p value is larger
 ```{r}
 Size_Data$orderTreatment = ordered(Size_Data$Treatment, levels = c("Control", "25C", "30C"))
 
-Size_lNorm_model <- gamlss(formula = Base_Diameter_mm ~ Time_Point*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = LOGNO(), data = Size_Data, control = gamlss.control(n.cyc = 4))
+Size_lNorm_model <- gamlss(formula = Base_Diameter_mm ~ Date*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = LOGNO(), data = Size_Data, control = gamlss.control(n.cyc = 4))
 summary(Size_lNorm_model)
 ```
 We have significance in our 30C treatment. 
@@ -423,6 +423,17 @@ Treatment25C             0.058551   0.036144   1.620 0.110141
 Treatment30C             0.125319   0.036144   3.467 0.000943 ***
 Time_Point:Treatment25C -0.005368   0.004571  -1.174 0.244585    
 Time_Point:Treatment30C -0.004736   0.004571  -1.036 0.304119  
+With Date instead of timepoint:
+                             Estimate Std. Error t value Pr(>|t|)    
+(Intercept)                  3.891136   0.019410 200.468  < 2e-16 ***
+Date11/9/2021                0.034406   0.026872   1.280 0.205257    
+Date11/13/2021               0.093911   0.026872   3.495 0.000888 ***
+Treatment25C                 0.039113   0.026872   1.456 0.150632    
+Treatment30C                 0.112139   0.026872   4.173 9.65e-05 ***
+Date11/9/2021:Treatment25C   0.038182   0.037588   1.016 0.313713    
+Date11/13/2021:Treatment25C -0.092462   0.037588  -2.460 0.016736 *  
+Date11/9/2021:Treatment30C  -0.004659   0.037588  -0.124 0.901766    
+Date11/13/2021:Treatment30C -0.055831   0.037588  -1.485 0.142584  
 
 **Size Graph**
 ```{r, warning=FALSE, message=FALSE}
@@ -470,7 +481,7 @@ We are going to use the lnorm distribution because the p value is larger and AIC
 ```{r, warning=FALSE, message=FALSE}
 Feeding_Data$orderTreatment = ordered(Feeding_Data$Treatment, levels = c("Control", "25C", "30C"))
 
-Feeding_lNorm_model <- gamlss(formula = Feeding_Time_Min ~ Time_Point*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = LOGNO(), data = Feeding_Data, control = gamlss.control(n.cyc = 2))
+Feeding_lNorm_model <- gamlss(formula = Feeding_Time_Min ~ Date*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = LOGNO(), data = Feeding_Data, control = gamlss.control(n.cyc = 3))
 summary(Size_lNorm_model)
 ```
 We saw significance in feeding for the 30C treatment
