@@ -38,10 +38,11 @@ health_data <- health_data %>%
   mutate(Green_Density = (Green_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_mg)) %>% 
   mutate(Dino_Density = (Dino_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_mg)) %>%
   mutate(MI_Green = (Div_Green/Green_Cells)*100, MI_Dino = (Div_Dino/Dino_Cells)*100) %>% #Bates et al. 2010
-  mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Date = as.factor(Date), Event = as.factor(Event), 
-         Species_ID = as.factor(Species_ID), Field_Site = as.factor(Field_Site), Event_True = as.factor(Event_True)) %>% 
+  mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Date = as.factor(Date), 
+         Event = as.factor(Event), Species_ID = as.factor(Species_ID), Field_Site = as.factor(Field_Site), 
+         Event_True = as.factor(Event_True)) %>% 
   filter(Species_ID != "G32B" & Species_ID != "G33B") %>% 
-  mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C"))
+  mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C"), Event = fct_relevel("Acclimation", "Pre-heat", "Post-heat", "Recovery"))
 cols_for_heat = c("25C" = "brown2", "30C" = "darkred", "Control" = "azure4")
 ```
 
@@ -56,11 +57,11 @@ If we get get a p-value < 0.5, then they are significantly different and we shou
 Since we cannot use any that we learned in class, we are using fitDist to check many distributions at once. fitDist showed that the SHASH distribution fits the best with our data, so we can use histDist to visualize it. 
 
 ```{r, warning=FALSE, message=FALSE}
-exp_test(health_data$PAM_avg)        #p-value < 2.2e-16, cannot use
-gamma_test(health_data$PAM_avg)      #p-value < 2.2e-16, cannot use
-lnorm_test(health_data$PAM_avg)      #p-value < 2.2e-16, cannot use
-normal_test(health_data$PAM_avg)     #p-value = 5.414e-08, cannot use
-weibull_test(health_data$PAM_avg)    #p-value < 2.2e-16, cannot use
+exp_test(health_data$PAM_avg)        #p-value < 0.05, cannot use
+gamma_test(health_data$PAM_avg)      #p-value < 0.05, cannot use
+lnorm_test(health_data$PAM_avg)      #p-value < 0.05, cannot use
+normal_test(health_data$PAM_avg)     #p-value < 0.05, cannot use
+weibull_test(health_data$PAM_avg)    #p-value < 0.05, cannot use
 ```
 
 **SHASH Distribution Graph for PAM Data**
@@ -69,6 +70,7 @@ weibull_test(health_data$PAM_avg)    #p-value < 2.2e-16, cannot use
 #Look for coral resiliancy Fv/Fm
 
 PAM_visual <- fitDist(PAM_avg, data = health_data, type = "realAll", try.gamlss = T)
+PAM_visual
 
 # Family:  c("SHASH", "Sinh-Arcsinh"), Fitting method: "nlminb" with 12% error
 # Call:  gamlssML(formula = y, family = DIST[i]) 
@@ -130,15 +132,7 @@ PAM_avg_plot
 ```
 
 ```{r, warning=FALSE, message=FALSE}
-PAM_data_plot <- health_data %>% 
-  filter(Event_True == "Acclimation_End" | Event_True == "Heat_End" | Event_True == "Recovery_End")
-
-ggplot(PAM_data_plot, aes(x = Treatment, y = PAM_avg)) +
-  geom_boxplot() +
-  facet_grid(. ~ Event_True) +
-  theme_test()
-
-ggplot(PAM_data, aes(x = Time_Point, y = PAM_avg)) +
+ ggplot(filter(PAM_data, Event == "Pre-heat" | Event == "Post-heat"), aes(x = Event, y = PAM_avg)) +
   geom_boxplot() +
   facet_grid(. ~ Treatment) +
   theme_test()
@@ -382,7 +376,7 @@ Time_Point:Treatment30C -0.004736   0.004571  -1.036 0.304031
 
 **Size Graph**
 ```{r, warning=FALSE, message=FALSE}
-ggplot(Size_Data, aes(x = Date, y = Base_Diameter_mm)) +
+ ggplot(Size_Data, aes(x = Date, y = Base_Diameter_mm)) +
   geom_boxplot() +
   facet_grid(. ~ Treatment) +
   theme_test()
