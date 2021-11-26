@@ -67,7 +67,6 @@ delta_data = nov_05 %>%
   select(Species_ID, Field_Site, Acclimation_Period, Treatment, Delta_Green_Density, Delta_Dino_Density)
 ```
 
-
 ### Symbiont Data
 ```{r, warning=FALSE, message=FALSE}
 Green_Threshold <- health_data %>% 
@@ -82,7 +81,6 @@ Dino_Threshold <- health_data %>%
   drop_na(Time_Point) %>% 
   filter(Dino_Density != 0)
 ```
-
 From the data above, we decide that the threshold for PAM will be 1000 cells per mg (symbiont density).
 
 ### Density Data
@@ -170,48 +168,6 @@ summary(Dino_Gamma_model)
 ```
 The green density data was run with a weibull distribution. This model shows significance in 30C treatment.
 Data from running with time points
-                         Estimate Std. Error t value Pr(>|t|)    
-(Intercept)              6.891324   0.256032  26.916  < 2e-16 ***
-Time_Point               0.022283   0.032057   0.695    0.494    
-Treatment25C             0.151205   0.410432   0.368    0.716    
-Treatment30C             1.814193   0.330629   5.487 1.43e-05 ***
-Time_Point:Treatment25C -0.075946   0.051368  -1.478    0.153    
-Time_Point:Treatment30C -0.004658   0.042604  -0.109    0.914   
-.
-Data from running with dates
-                            Estimate Std. Error t value Pr(>|t|)    
-(Intercept)                  7.02648    0.20520  34.242  < 2e-16 ***
-Date11/9/2021               -0.17523    0.27804  -0.630   0.5354    
-Date11/13/2021               0.28886    0.28856   1.001   0.3283    
-Treatment25C                -0.12147    0.32291  -0.376   0.7106    
-Treatment30C                 1.47524    0.26344   5.600 1.53e-05 ***
-Date11/9/2021:Treatment25C   0.05102    0.45057   0.113   0.9109    
-Date11/13/2021:Treatment25C -0.83396    0.44295  -1.883   0.0738 .  
-Date11/9/2021:Treatment30C   0.13530    0.38302   0.353   0.7275    
-Date11/13/2021:Treatment30C  0.32660    0.38314   0.852   0.4037   
-
-The dino density data was run with a gamma distribution. This model shows significance in 25C treatment. 
-Data from running with time points
-                        Estimate Std. Error t value Pr(>|t|)    
-(Intercept)              8.12451    0.31562  25.742  < 2e-16 ***
-Time_Point              -0.02759    0.03988  -0.692  0.49568    
-Treatment25C            -1.46697    0.49470  -2.965  0.00674 ** 
-Treatment30C            -0.70693    0.40737  -1.735  0.09551 .  
-Time_Point:Treatment25C  0.09932    0.06185   1.606  0.12139    
-Time_Point:Treatment30C -0.03156    0.05274  -0.598  0.55519
-.
-Data from running with dates
-                            Estimate Std. Error t value Pr(>|t|)    
-(Intercept)                  8.06079    0.25027  32.208  < 2e-16 ***
-Date11/9/2021               -0.16934    0.34106  -0.496  0.62449    
-Date11/13/2021              -0.23477    0.35394  -0.663  0.51405    
-Treatment25C                -1.32556    0.39574  -3.350  0.00291 ** 
-Treatment30C                -0.74465    0.32308  -2.305  0.03104 *  
-Date11/9/2021:Treatment25C   0.43494    0.55161   0.788  0.43886    
-Date11/13/2021:Treatment25C  1.03874    0.54261   1.914  0.06874 .  
-Date11/9/2021:Treatment30C  -0.23333    0.46976  -0.497  0.62435    
-Date11/13/2021:Treatment30C  0.03936    0.46977   0.084  0.93399  
-
 
 Plots:
 ```{r, warning=FALSE, message=FALSE}
@@ -287,12 +243,6 @@ green_over_time <- ggplot(data = Green_Symbionts, aes(x=Date, y = Mean_Green_Log
 green_over_time
 ``````````````
 
-### Mitotic Index
-```{r}
-shapiro.test(filtered_dates$Feeding_Time_Min)      #p-value < 0.05, not normal distribution
-bartlett.test(Feeding_Time_Min ~ Treatment, filtered_dates)      #p-value < 0.01, does not meet assumption of equal variance
-```
-
 ### EXTRA DENSITY CALCULATIONS - NOT USING 
 Log Transformations:
 Next we run log transformations on our data and re-run the shapiro test to see if it has transformed our data to be more normal. We also mutate the data in order for the dataset to not contain 0s since we are running a log transformation. We repeat this for both Green and Dino density.
@@ -351,7 +301,7 @@ shapiro.test(MIDino_log$MI_Data)      #p-value < 0.05, not normal distribution
 ```
 
 Checking Distributions:
-We tried a log and gaussian transformation and both did not work, so we are running these models.
+We tried a log and Gaussian transformation and both did not work, so we are running these models.
 
 MI GREEN AND MI DINO NOT FOUND *** trouble shoot 
 ```{r, warning=FALSE, message=FALSE}
@@ -527,24 +477,6 @@ Size_lNorm_model <- gamlss(formula = Base_Diameter_mm ~ Date*Treatment + random(
 summary(Size_lNorm_model)
 ```
 We have significance in our 30C treatment. 
-                         Estimate Std. Error t value Pr(>|t|)    
-(Intercept)              3.868835   0.026091 148.281  < 2e-16 ***
-Time_Point               0.009303   0.003279   2.837 0.006080 ** 
-Treatment25C             0.058551   0.036144   1.620 0.110141    
-Treatment30C             0.125319   0.036144   3.467 0.000943 ***
-Time_Point:Treatment25C -0.005368   0.004571  -1.174 0.244585    
-Time_Point:Treatment30C -0.004736   0.004571  -1.036 0.304119  
-With Date instead of timepoint:
-                             Estimate Std. Error t value Pr(>|t|)    
-(Intercept)                  3.891136   0.019410 200.468  < 2e-16 ***
-Date11/9/2021                0.034406   0.026872   1.280 0.205257    
-Date11/13/2021               0.093911   0.026872   3.495 0.000888 ***
-Treatment25C                 0.039113   0.026872   1.456 0.150632    
-Treatment30C                 0.112139   0.026872   4.173 9.65e-05 ***
-Date11/9/2021:Treatment25C   0.038182   0.037588   1.016 0.313713    
-Date11/13/2021:Treatment25C -0.092462   0.037588  -2.460 0.016736 *  
-Date11/9/2021:Treatment30C  -0.004659   0.037588  -0.124 0.901766    
-Date11/13/2021:Treatment30C -0.055831   0.037588  -1.485 0.142584  
 
 **Size Graph**
 ```{r, warning=FALSE, message=FALSE}
@@ -595,14 +527,6 @@ Feeding_Data$orderTreatment = ordered(Feeding_Data$Treatment, levels = c("Contro
 Feeding_lNorm_model <- gamlss(formula = Feeding_Time_Min ~ Date*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = LOGNO(), data = Feeding_Data, control = gamlss.control(n.cyc = 3))
 summary(Size_lNorm_model)
 ```
-We saw significance in feeding for the 30C treatment
-                         Estimate Std. Error t value Pr(>|t|)    
-(Intercept)              3.868835   0.026091 148.281  < 2e-16 ***
-Time_Point               0.009303   0.003279   2.837 0.006080 ** 
-Treatment25C             0.058551   0.036144   1.620 0.110141    
-Treatment30C             0.125319   0.036144   3.467 0.000943 ***
-Time_Point:Treatment25C -0.005368   0.004571  -1.174 0.244585    
-Time_Point:Treatment30C -0.004736   0.004571  -1.036 0.304119   
 
 Plot:
 ```{r, warning=FALSE, message=FALSE}
