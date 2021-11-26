@@ -42,38 +42,58 @@ health_data <- health_data %>%
          Event = as.factor(Event), Species_ID = as.factor(Species_ID), Field_Site = as.factor(Field_Site), 
          Event_True = as.factor(Event_True)) %>% 
   filter(Species_ID != "G32B" & Species_ID != "G33B") %>% 
-  mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C"), Event = fct_relevel("Acclimation", "Pre-heat", "Post-heat", "Recovery"))
+  mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C"), 
+         Event = fct_relevel("Acclimation", "Pre-heat", "Post-heat", "Recovery"))
 cols_for_heat = c("25C" = "brown2", "30C" = "darkred", "Control" = "azure4")
 ```
 
 ### PAM data
-```{r, warning=FALSE, message=FALSE}
-shapiro.test(health_data$PAM_avg) # p-value < 0.05, distribution is not normal
-bartlett.test(PAM_avg ~ Treatment, data = health_data) # p-value < 0.05, does not meet equal variance assumptions
+```{r}
+PAM_individuals <- health_data %>% 
+  filter(Green_Density > 1000 | Dino_Density > 1000) %>% 
+  distinct(Species_ID)
+
+PAM_data <- health_data %>% 
+  select(-c(Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles,
+            Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, 
+            Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Div_Green, Div_Dino, 
+            MI_Green, MI_Dino)) %>%
+  drop_na(Time_Point) %>%
+  drop_na(PAM_avg) %>%
+  group_by(Treatment, Date) %>% 
+  mutate(PAM_per_Treatment = mean(PAM_avg))
+
+filtered_PAM_data = PAM_individuals %>%
+  left_join(PAM_data) %>% 
+  select(-c(Green_Density, Dino_Density))
 ```
+  
+```{r, warning=FALSE, message=FALSE}
+shapiro.test(filtered_PAM_data$PAM_avg) # p-value < 0.05, distribution is not normal
+bartlett.test(PAM_avg ~ Treatment, data = filtered_PAM_data) # p-value < 0.05, does not meet equal variance assumptions
+```
+
+Our data does not meet the assumption and therefore we will not be able to use tests such as ANOVA and linear models. 
 
 Checking distribution:
-If we get get a p-value < 0.5, then they are significantly different and we should not test
-Since we cannot use any that we learned in class, we are using fitDist to check many distributions at once. fitDist showed that the SHASH distribution fits the best with our data, so we can use histDist to visualize it. 
+If we get get a p-value < 0.5, then they is a significant differnce between the data and the distribution, and therefore this model should not be used in our analyse.
 
 ```{r, warning=FALSE, message=FALSE}
-exp_test(health_data$PAM_avg)        #p-value < 0.05, cannot use
-gamma_test(health_data$PAM_avg)      #p-value < 0.05, cannot use
-lnorm_test(health_data$PAM_avg)      #p-value < 0.05, cannot use
-normal_test(health_data$PAM_avg)     #p-value < 0.05, cannot use
-weibull_test(health_data$PAM_avg)    #p-value < 0.05, cannot use
+exp_test(filtered_PAM_data$PAM_avg)        #p-value < 0.05, cannot use
+gamma_test(filtered_PAM_data$PAM_avg)      #p-value < 0.05, cannot use
+lnorm_test(filtered_PAM_data$PAM_avg)      #p-value < 0.05, cannot use
+normal_test(filtered_PAM_data$PAM_avg)     #p-value < 0.05, cannot use
+weibull_test(filtered_PAM_data$PAM_avg)    #p-value < 0.05, cannot use
 ```
+
+Since we cannot use any that we learned in class, we are using fitDist to check many distributions at once. fitDist showed that the SHASH distribution fits the best with our data, so we can use histDist to visualize it. 
 
 **SHASH Distribution Graph for PAM Data**
 ```{r, warning=FALSE, message=FALSE}
+#Look for anemone resiliancy Fv/Fm
 
-#Look for coral resiliancy Fv/Fm
-
-PAM_visual <- fitDist(PAM_avg, data = health_data, type = "realAll", try.gamlss = T)
+PAM_visual <- fitDist(PAM_avg, data = filtered_PAM_data, type = "realAll", try.gamlss = T)
 PAM_visual
-
-# Family:  c("SHASH", "Sinh-Arcsinh"), Fitting method: "nlminb" with 12% error
-# Call:  gamlssML(formula = y, family = DIST[i]) 
 
 #Visualizing fistDist
 
@@ -83,42 +103,22 @@ histDist(y, family = SHASH, density = FALSE,
         fg.hist = rainbow(12)[9])
 ```
 
+This data tells us to use the SHASH distribution for our PAM model. 
+
 ```{r, warning=FALSE, message=FALSE}
-#Modelling fitDist
-PAM_data <- health_data %>% 
-  select(-c(Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, 
-            Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Green_Density, Dino_Density, 
-            Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Div_Green, Div_Dino, MI_Green,
-            MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3)) %>% 
-  drop_na(PAM_avg) %>% 
-  drop_na(Event_True) %>% 
-  drop_na(Time_Point) %>% 
-  filter(Species_ID != "G32B" & Species_ID != "G33B") %>%
-  filter(Species_ID != "G32B" & Species_ID != "G33B") %>% 
-  group_by(Treatment, Date) %>% 
-  mutate(PAM_per_Treatment = mean(PAM_avg))
+# Modelling fitDist
+PAM_model <- gamlss(formula = PAM_avg ~ Time_Point*Treatment + random(Species_ID), family = SHASH(), data = filtered_PAM_data, control = gamlss.control(n.cyc = 22))
 
-PAM_data$orderTreatment = ordered(PAM_data$Treatment, levels = c("Control", "25C", "30C"))
-
-PAM_model <- gamlss(formula = PAM_avg ~ Time_Point*Treatment + random(Species_ID), family = SHASH(), data = PAM_data, control = gamlss.control(n.cyc = 200))
 summary(PAM_model)
-#                         Estimate Std. Error t value Pr(>|t|)    
-#(Intercept)              0.467240   0.007285  64.136   <2e-16 ***
-#Time_Point               0.002956   0.001270   2.328   0.0206 *  
-#Treatment25C            -0.158368   0.009339 -16.958   <2e-16 ***
-#Treatment30C            -0.017513   0.009355  -1.872   0.0623 .  
-#Time_Point:Treatment25C -0.001190   0.001675  -0.711   0.4780    
-#Time_Point:Treatment30C -0.002611   0.001736  -1.504   0.1337  
-
-#Time point and 25C is signifigant, 30C is not
-#plot avg fv/fm over all time points (this was signifigantly different over time)
 ```
 
-**PAM Graph**
-We see no significant differences between treatments at different times of the experiment. 
+Findings:
+* Time point and 25C is signifigant, 30C is not
+* Plot avg fv/fm over all time points (this was signifigantly different over time)
 
+**PAM graphs**
 ```{r}
-PAM_avg_plot <- ggplot(data = PAM_data, aes(x = Time_Point, y = PAM_per_Treatment, color = Treatment)) +
+PAM_avg_plot <- ggplot(data = filtered_PAM_data, aes(x = Time_Point, y = PAM_per_Treatment, color = Treatment)) +
   geom_line() +
   geom_point(size = 1) +
   xlab("Time (Days)") +
@@ -126,28 +126,13 @@ PAM_avg_plot <- ggplot(data = PAM_data, aes(x = Time_Point, y = PAM_per_Treatmen
   scale_color_manual(values = cols_for_heat)  +
   scale_fill_manual(values = cols_for_heat) +
   theme_test() +
-  geom_segment(aes(x = 2.5, y = 0.2, xend = 2.5, yend = 0.75), size = 0.5 ,linetype = 2, colour = "black") +
-  geom_segment(aes(x = 8.5, y = 0.2, xend = 8.5, yend =0.75), size= 0.35, linetype = 2, colour = "black")
+  geom_segment(aes(x = 2.75, y = 0.2, xend = 2.75, yend = 0.75), size = 0.5 ,linetype = 2, colour = "black") +
+  geom_segment(aes(x = 8.25, y = 0.2, xend = 8.25, yend =0.75), size= 0.35, linetype = 2, colour = "black")
 PAM_avg_plot
 ```
 
-```{r, warning=FALSE, message=FALSE}
- ggplot(filter(PAM_data, Event == "Pre-heat" | Event == "Post-heat"), aes(x = Event, y = PAM_avg)) +
-  geom_boxplot() +
-  facet_grid(. ~ Treatment) +
-  theme_test()
-```
+```{r}
 
-```{r, warning=FALSE, message=FALSE}
-PAM_data_end <- health_data %>% 
-  filter(Event_True == "Heat_End") %>% 
-  drop_na(PAM_avg)
-```
-
-```{r, warning=FALSE, message=FALSE}
-ggplot(PAM_data_end, aes(x = Treatment, y = PAM_avg)) +
-  geom_boxplot() +
-  theme_test()
 ```
 
 ### Symbiont Data
