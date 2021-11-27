@@ -560,8 +560,7 @@ feeding_plot <- ggplot(Feeding_Data, aes(x = Date, y = Feeding_Time_Min, fill = 
   scale_color_manual(values = cols_for_heat) +
   scale_fill_manual(values = cols_for_heat) +
   theme_test()
-feeding_plot <- feeding_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
-                              "11/13/2021" = "Recovery"))
+feeding_plot <- feeding_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat"))
 feeding_plot
 ```
 
