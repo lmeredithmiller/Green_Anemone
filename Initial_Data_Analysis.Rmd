@@ -513,8 +513,8 @@ We have significance in our 30C treatment.
 ```{r, warning=FALSE, message=FALSE}
 Feeding_Data <- health_data %>% 
   select(-c(Base_Width, Base_Length, Base_Diagonal, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Weight_Tentacle_mg, Green_Cells, Dino_Cells, Base_Diameter_mm, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Green_Density, Dino_Density, MI_Green, MI_Dino, Div_Green, Div_Dino)) %>%
-  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
-  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021")) %>% 
+  filter(Date == "11/5/2021" | Date == "11/9/2021") %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021")) %>% 
   drop_na(Feeding_Time_Min) %>% 
   mutate(Acclimation_Period = as.factor(Acclimation_Period))
 ```
@@ -548,7 +548,7 @@ We are going to use the lnorm distribution because the p value is larger and AIC
 Feeding_Data$orderTreatment = ordered(Feeding_Data$Treatment, levels = c("Control", "25C", "30C"))
 
 Feeding_lNorm_model <- gamlss(formula = Feeding_Time_Min ~ Date*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = LOGNO(), data = Feeding_Data, control = gamlss.control(n.cyc = 3))
-summary(Size_lNorm_model)
+summary(Feeding_lNorm_model)
 ```
 
 Plot:
