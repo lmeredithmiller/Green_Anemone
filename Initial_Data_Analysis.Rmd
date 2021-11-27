@@ -53,6 +53,7 @@ health_data <- health_data %>%
 cols_for_heat = c("25C" = "brown2", "30C" = "darkred", "Control" = "azure4")
 ```
 
+We are combing the data from nov 5 (pre heat) and nov 9 (post heat) to be able to calculate the delta/change between these two dates. 
 ```{r}
 nov_05 <- health_data %>% 
   filter(Date == "11/5/2021")
@@ -73,6 +74,7 @@ delta_data = nov_05 %>%
 ```
 
 ### Symbiont Data
+#### PAM Threshold
 ```{r, warning=FALSE, message=FALSE}
 Green_Threshold <- health_data %>% 
   select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Div_Dino, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Dino, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True, Dino_Density)) %>% 
@@ -88,7 +90,7 @@ Dino_Threshold <- health_data %>%
 ```
 From the data above, we decide that the threshold for PAM will be 1000 cells per mg (symbiont density).
 
-### Density Data
+#### Density Data
 The two datasets below are used in models for algae density and mitotic index of zoochlorellae and zooxanthellae. It filters out unwanted columns and drops NAs for Green_Density, Dino_Density, MI_Green and MI_Dino.
 
 ```{r, warning=FALSE, message=FALSE}
@@ -193,15 +195,26 @@ summary(DeltaDino_model)
 
 Plots for symbiont data:
 ```{r, warning=FALSE, message=FALSE}
-green_plot <- ggplot(Green_Symbionts, aes(x = Date, y = Green_Density)) +
+green_plot <- ggplot(Green_Symbionts, aes(x = Date, y = log(Green_Density))) +
   geom_boxplot() +
   xlab("Event") +
-  ylab("Green algae density") +
+  ylab("Log-transformed green algae density") +
   facet_grid(. ~ Treatment) +
   theme_test()
 green_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
                               "11/13/2021" = "Recovery"))
 ```
+
+```{r}
+green_plot <- ggplot(Green_Symbionts, aes(x = Treatment, y = log(Green_Density))) +
+  geom_boxplot() +
+  xlab("Event") +
+  ylab("Green algae density") +
+  facet_grid(. ~ Date) +
+  theme_test()
+green_plot 
+```
+
 
 ```{r}
 ggplot(filter(Green_Symbionts, Date ==  "11/9/2021"), aes(x = Treatment, y = log(Green_Density + 1))) +
@@ -231,7 +244,7 @@ ggplot(filter(Dino_Symbionts, Date ==  "11/9/2021"), aes(x = Treatment, y = Dino
 
 ```{r}
 delta_green_density <- ggplot(delta_data, aes(x = Treatment, y = Delta_Green_Density)) +
-  geom_boxplot() +
+  geom_boxplot(colour = "darkgreen", fill = "darkgreen", alpha = 0.5) +
   ylab("Delta green algae density") +
   theme_test()
 delta_green_density
@@ -239,10 +252,34 @@ delta_green_density
 
 ```{r}
 delta_dino_density <- ggplot(delta_data, aes(x = Treatment, y = Delta_Dino_Density)) +
-  geom_boxplot() +
+  geom_boxplot(colour = "chocolate4", fill = "chocolate4", alpha = 0.5) +
   ylab("Delta dinoflagellate density") +
   theme_test()
 delta_dino_density
+```
+
+I am doing a little Dan-hack on the data for the purpose of this graph. 
+
+```{r}
+delta_green_only <- delta_data %>% 
+  mutate(Density = Delta_Green_Density) %>% 
+  select(-c(Delta_Dino_Density))
+  
+  
+delta_dino_only <- delta_data %>% 
+  mutate(Density = Delta_Dino_Density) %>% 
+  select(-c(Delta_Green_Density))
+  
+
+delta_for_plot <- rbind(delta_green_only, delta_dino_only)
+```
+
+```{r}
+delta_density_plot <- ggplot(delta_data) +
+  geom_boxplot(aes(x = Treatment, y = Delta_Green_Density), colour = "darkgreen", fill = "darkgreen", alpha = 0.5) +
+  geom_boxplot(aes(x = Treatment, y = Delta_Dino_Density), colour = "chocolate4", fill = "chocolate4", alpha = 0.5) +
+  theme_test()
+  delta_density_plot
 ```
 
 ```{r}
@@ -266,7 +303,7 @@ green_over_time
 ```
 
 
-### Mitotic Index Data
+#### Mitotic Index Data
 ```{r}
 MI_Data <- health_data %>% 
   select(-c(Event, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
