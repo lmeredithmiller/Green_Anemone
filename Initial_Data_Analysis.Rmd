@@ -215,7 +215,6 @@ green_plot <- ggplot(Green_Symbionts, aes(x = Treatment, y = log(Green_Density))
 green_plot 
 ```
 
-
 ```{r}
 ggplot(filter(Green_Symbionts, Date ==  "11/9/2021"), aes(x = Treatment, y = log(Green_Density + 1))) +
   geom_boxplot() #+
@@ -293,7 +292,7 @@ green_over_time <- ggplot(data = Green_Symbionts, aes(x=Date, y = Mean_Green_Log
   #            size = 1)+
   geom_point(size=2.5) +
   geom_linerange(aes(ymin = Mean_Green_Log - SE_Green_Log, 
-                    ymax = Mean_Green_Log + SE_Green_Log)) +
+                     ymax = Mean_Green_Log + SE_Green_Log)) +
   geom_line() +
   labs(x="Date", 
        y = "Mean Green") +
