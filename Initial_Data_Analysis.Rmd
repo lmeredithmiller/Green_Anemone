@@ -7,6 +7,10 @@ output:
   html_document: default
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, tidy=TRUE, tidy.opts = list(width.cutoff = 80))
+```
+
 ```{r, warning=FALSE, message=FALSE}
 library(performance)
 library(DHARMa)
@@ -62,9 +66,10 @@ delta_data = nov_05 %>%
          Delta_Dino_Density = Dino_Density.y - Dino_Density.x,
          Field_Site = Field_Site.x,
          Acclimation_Period = Acclimation_Period.x,
+         Date = Date.x,
          Treatment = Treatment.x) %>% 
   drop_na(Delta_Dino_Density, Delta_Green_Density) %>%
-  select(Species_ID, Field_Site, Acclimation_Period, Treatment, Delta_Green_Density, Delta_Dino_Density)
+  select(Species_ID, Date, Field_Site, Acclimation_Period, Treatment, Delta_Green_Density, Delta_Dino_Density)
 ```
 
 ### Symbiont Data
@@ -115,7 +120,7 @@ Dino_Symbionts <- health_data %>%
   mutate(Acclimation_Period = as.factor(Acclimation_Period))
 ```
 
-Checking Normality and Equal Variance:
+Checking Normality and Equal Variance of Symbiont Data:
 ```{r, warning=FALSE, message=FALSE}
 #Green
 shapiro.test(Green_Symbionts$Green_Density)      #p-value < 0.05, not normal distribution
@@ -126,7 +131,7 @@ shapiro.test(Dino_Symbionts$Dino_Density)      #p-value < 0.05, not normal distr
 bartlett.test(Dino_Density ~ Treatment, Dino_Symbionts)      #p-value < 0.05, meets assumption of equal variance
 ```
 
-Checking Distributions:
+Checking Distributions of Symbiont Data:
 We first test distributions learned in class to see if they fit those with the normal data. We repeat this for both Green and Dino density.
 
 ```{r, warning=FALSE, message=FALSE}
@@ -151,7 +156,7 @@ weibull_test(Dino_Symbionts$Dino_Density)       #p-value > 0.05, larger i can us
 Dino_Gamma <- histDist(Dino_Symbionts$Dino_Density, "GA", density = F, main = "Gamma")
 ```
 
-Running Models:
+Running Models on Symbiont Data:
 We chose to use our Weibull distribution for green density and Gamma distribution for dino density. Here we run our models.
 ```{r, warning=FALSE, message=FALSE}
 #Green
@@ -169,7 +174,24 @@ summary(Dino_Gamma_model)
 The green density data was run with a weibull distribution. This model shows significance in 30C treatment.
 Data from running with time points
 
-Plots:
+Change in density calculations onn Symbiont data
+```{r}
+#Green
+DeltaGreen_fist <- fitDist(Delta_Green_Density, data = delta_data, type = "realAll", try.gamlss = T)
+DeltaGreen_hist <- histDist(delta_data$Delta_Green_Density, "PE", density = F, main = "Power Exponential")
+
+DeltaGreen_model <- gamlss(formula = Delta_Green_Density ~ Date*Treatment + random(Species_ID) + random(Field_Site), family = PE(), data = delta_data, control = gamlss.control(n.cyc = 250))
+summary(DeltaGreen_model)
+
+#Dino
+DeltaDino_fist <- fitDist(Delta_Dino_Density, data = delta_data, type = "realAll", try.gamlss = T)
+DeltaGreen_hist <- histDist(delta_data$Delta_Dino_Density, "JSUo", density = F, main = "JSUo")
+
+DeltaDino_model <- gamlss(formula = Delta_Dino_Density ~ Date*Treatment + random(Species_ID) + random(Field_Site), family = JSUo(), data = delta_data, control = gamlss.control(n.cyc = 250))
+summary(DeltaDino_model)
+```
+
+Plots for symbiont data:
 ```{r, warning=FALSE, message=FALSE}
 green_plot <- ggplot(Green_Symbionts, aes(x = Date, y = Green_Density)) +
   geom_boxplot() +
@@ -241,40 +263,8 @@ green_over_time <- ggplot(data = Green_Symbionts, aes(x=Date, y = Mean_Green_Log
   scale_fill_manual(values = cols_for_heat) +
   scale_colour_manual(values = cols_for_heat)
 green_over_time
-``````````````
-
-### EXTRA DENSITY CALCULATIONS - NOT USING 
-Log Transformations:
-Next we run log transformations on our data and re-run the shapiro test to see if it has transformed our data to be more normal. We also mutate the data in order for the dataset to not contain 0s since we are running a log transformation. We repeat this for both Green and Dino density.
-```{r, warning=FALSE, message=FALSE}
-#Green
-Green_log <- Green_Symbionts %>% mutate(log_data = log(abs(Green_Density + 0.01)))
-
-shapiro.test(Green_log$log_data)      #p-value < 0.05, not normal distribution
-
-#Dino
-Dino_log <- Dino_Symbionts %>% mutate(log_data = log(abs(Dino_Density + 0.01)))
-
-shapiro.test(Dino_log$log_data)      #p-value < 0.05, not normal distribution
 ```
 
-Gaussian Transformation:
-Both log transformations did not make the data normal, so I will try a Gaussian transformation. 
-```{r, warning=FALSE, message=FALSE}
-#Green
-Green_gaussian <- Green_Symbionts %>% mutate(gaus_data = Gaussianize(Green_Symbionts$Green_Density, 's'))
-shapiro.test(Green_gaussian$gaus_data)      #p-value < 0.05, not normal distribution, p = 3.19e-05
-
-#Dino
-Dino_gaussian <- Dino_Symbionts %>% mutate(gaus_data = Gaussianize(Dino_Symbionts$Dino_Density, 's'))
-shapiro.test(Dino_gaussian$gaus_data)      #p-value > 0.05, normal distribution, p = 0.106
-
-Dino_gaussian_plot <- ggplot(Dino_gaussian, aes(x = gaus_data)) + 
-  geom_density() + 
-  theme_classic() + 
-  geom_vline(xintercept = 0, colour = "red")
-```
-The Gaussian transformation did not work on green density, when we ran a shapiro test for normality we got a p value smaller than 0.05. The transformation worked on the dino density. After visualizing the data, I think we will stick with the Weibell and Gamma distributions for green and dino density respectively.
 
 ### Mitotic Index Data
 ```{r}
@@ -286,10 +276,12 @@ MI_Data <- health_data %>%
   drop_na(Dino_Density) %>% 
   drop_na(MI_Green) %>% 
   drop_na(MI_Dino) %>% 
-  mutate(Acclimation_Period = as.factor(Acclimation_Period))
+  mutate(Acclimation_Period = as.factor(Acclimation_Period)) %>% 
+  mutate(MI_Dino_scaled = MI_Dino + 0.01) %>% 
+  mutate(MI_Green_scaled = MI_Green + 0.01)
 ```
 
-Transformation of Data:
+Transformation of MI Data:
 ```{r}
 #Green
 MIGreen_log <- MI_Data %>% mutate(MI_Data = log(abs(MI_Green + 0.01)))
@@ -300,8 +292,7 @@ MIDino_log <- MI_Data %>% mutate(MI_Data = log(abs(MI_Dino + 0.01)))
 shapiro.test(MIDino_log$MI_Data)      #p-value < 0.05, not normal distribution
 ```
 
-Checking Distributions:
-We tried a log and Gaussian transformation and both did not work, so we are running these models.
+Checking Distributions on MI data:
 
 MI GREEN AND MI DINO NOT FOUND *** trouble shoot 
 ```{r, warning=FALSE, message=FALSE}
@@ -323,15 +314,12 @@ lnorm_test(MI_Data$MI_Dino)         #p-value = NA
 normal_test(MI_Data$MI_Dino)        #p-value < 0.05, not normal
 weibull_test(MI_Data$MI_Dino)       #p-value = NA
 
-Dino0 <- MI_Data %>%
-  mutate(MI_Dino_scaled = MI_Dino + 0.01)
-
-MIDino_fit <- fitDist(MI_Dino_scaled, data = Dino0, type = "realAll", try.gamlss = T)
+MIDino_fit <- fitDist(MI_Dino_scaled, data = MI_Data, type = "realAll", try.gamlss = T)
 #family SHASHo
 MIDino_hist <- histDist(Dino0$MI_Dino_scaled, "SHASHo", density = T, main = "SHASHo")
 ```
 
-Running Models:
+Running Models on MI data:
 ```{r}
 #Green
 MI_Data$orderTreatment = ordered(MI_Data$Treatment, levels = c("Control", "25C", "30C"))
@@ -359,7 +347,7 @@ PAM_data <- health_data %>%
   select(-c(Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles,
             Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, 
             Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Div_Green, Div_Dino, 
-            MI_Green, MI_Dino)) %>%
+            MI_Green, MI_Dino, Acclimation_Period, Green_Density, Dino_Density)) %>%
   drop_na(Time_Point) %>%
   drop_na(PAM_avg) %>%
   group_by(Treatment, Date) %>% 
@@ -367,7 +355,8 @@ PAM_data <- health_data %>%
 
 filtered_PAM_data = PAM_individuals %>%
   left_join(PAM_data) %>% 
-  select(-c(Green_Density, Dino_Density))
+  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021")) 
 ```
   
 ```{r, warning=FALSE, message=FALSE}
@@ -377,7 +366,7 @@ bartlett.test(PAM_avg ~ Treatment, data = filtered_PAM_data) # p-value < 0.05, d
 
 Our data does not meet the assumption and therefore we will not be able to use tests such as ANOVA and linear models. 
 
-Checking distribution:
+Checking distribution on PAM data:
 If we get get a p-value < 0.5, then they is a significant differnce between the data and the distribution, and therefore this model should not be used in our analyse.
 
 ```{r, warning=FALSE, message=FALSE}
@@ -409,7 +398,7 @@ This data tells us to use the SHASH distribution for our PAM model.
 
 ```{r, warning=FALSE, message=FALSE}
 # Modelling fitDist
-PAM_model <- gamlss(formula = PAM_avg ~ Time_Point*Treatment + random(Species_ID), family = SHASH(), data = filtered_PAM_data, control = gamlss.control(n.cyc = 22))
+PAM_model <- gamlss(formula = PAM_avg ~ Date*Treatment + random(Species_ID), family = SHASH(), data = filtered_PAM_data, control = gamlss.control(n.cyc = 250))
 
 summary(PAM_model)
 ```
@@ -443,14 +432,11 @@ Size_Data <- health_data %>%
   mutate(Acclimation_Period = as.factor(Acclimation_Period))
 ```
 
-Running test of normality and equal variance on size data. 
-```{r, warning=FALSE, message=FALSE}
-shapiro.test(Size_Data$Base_Diameter_mm) # p-value = 0.0002, distribution is not normal
-bartlett.test(Base_Diameter_mm ~ Treatment, data = Size_Data) # p-value = 0.15, yay equal variance
-```
-
 Checking Distribution:
 ```{r}
+shapiro.test(Size_Data$Base_Diameter_mm) # p-value = 0.0002, distribution is not normal
+bartlett.test(Base_Diameter_mm ~ Treatment, data = Size_Data) # p-value = 0.15, yay equal variance
+
 exp_test(Size_Data$Base_Diameter_mm)            #p-value < 0.05
 gamma_test(Size_Data$Base_Diameter_mm)          #p-value > 0.05, p = 0.1874
 lnorm_test(Size_Data$Base_Diameter_mm)          #p-value > 0.05, p = 0.4117
