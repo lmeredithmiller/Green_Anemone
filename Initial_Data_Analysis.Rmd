@@ -241,23 +241,23 @@ I am doing a little Dan-hack on the data for the purpose of this graph.
 ```{r}
 delta_green_only <- delta_data %>% 
   mutate(Density = Delta_Green_Density) %>% 
-  select(-c(Delta_Dino_Density))
+  mutate(Colour = rep("Green")) %>% 
+  select(-c(Delta_Dino_Density, Delta_Green_Density))
   
   
 delta_dino_only <- delta_data %>% 
   mutate(Density = Delta_Dino_Density) %>% 
-  select(-c(Delta_Green_Density))
-  
+  mutate(Colour = rep("Dino")) %>% 
+  select(-c(Delta_Green_Density, Delta_Dino_Density))
 
 delta_for_plot <- rbind(delta_green_only, delta_dino_only)
 ```
 
 ```{r}
-delta_density_plot <- ggplot(delta_data) +
-  geom_boxplot(aes(x = Treatment, y = Delta_Green_Density), colour = "darkgreen", fill = "darkgreen", alpha = 0.5) +
-  geom_boxplot(aes(x = Treatment, y = Delta_Dino_Density), colour = "chocolate4", fill = "chocolate4", alpha = 0.5) +
+delta_density_plot <- ggplot(delta_for_plot, aes(x = Treatment, y = Density, fill = Colour)) +
+  geom_boxplot() +
   theme_test()
-  delta_density_plot
+delta_density_plot
 ```
 
 ```{r}
