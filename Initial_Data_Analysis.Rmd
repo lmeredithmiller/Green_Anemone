@@ -130,7 +130,7 @@ bartlett.test(Green_Density ~ Treatment, Green_Symbionts)      #p-value < 0.05, 
 
 #Dino
 shapiro.test(Dino_Symbionts$Dino_Density)      #p-value < 0.05, not normal distribution
-bartlett.test(Dino_Density ~ Treatment, Dino_Symbionts)      #p-value < 0.05, meets assumption of equal variance
+bartlett.test(Dino_Density ~ Treatment, Dino_Symbionts)      #p-value > 0.05, meets assumption of equal variance
 ```
 
 Checking Distributions of Symbiont Data:
@@ -182,15 +182,15 @@ Change in density calculations onn Symbiont data
 DeltaGreen_fist <- fitDist(Delta_Green_Density, data = delta_data, type = "realAll", try.gamlss = T)
 DeltaGreen_hist <- histDist(delta_data$Delta_Green_Density, "PE", density = F, main = "Power Exponential")
 
-DeltaGreen_model <- gamlss(formula = Delta_Green_Density ~ Date*Treatment + random(Species_ID) + random(Field_Site), family = PE(), data = delta_data, control = gamlss.control(n.cyc = 250))
-summary(DeltaGreen_model)
+# DeltaGreen_model <- gamlss(formula = Delta_Green_Density ~ Date*Treatment + random(Species_ID) + random(Field_Site), family = PE(), data = delta_data, control = gamlss.control(n.cyc = 250))
+# summary(DeltaGreen_model)
 
 #Dino
 DeltaDino_fist <- fitDist(Delta_Dino_Density, data = delta_data, type = "realAll", try.gamlss = T)
 DeltaGreen_hist <- histDist(delta_data$Delta_Dino_Density, "JSUo", density = F, main = "JSUo")
 
-DeltaDino_model <- gamlss(formula = Delta_Dino_Density ~ Date*Treatment + random(Species_ID) + random(Field_Site), family = JSUo(), data = delta_data, control = gamlss.control(n.cyc = 250))
-summary(DeltaDino_model)
+#DeltaDino_model <- gamlss(formula = Delta_Dino_Density ~ Date*Treatment + random(Species_ID) + random(Field_Site), family = JSUo(), data = delta_data, control = gamlss.control(n.cyc = 250))
+#summary(DeltaDino_model)
 ```
 
 Plots for symbiont data:
@@ -361,8 +361,8 @@ Running Models on MI data:
 #Green
 MI_Data$orderTreatment = ordered(MI_Data$Treatment, levels = c("Control", "25C", "30C"))
 
-Green_JSUo_model <- gamlss(formula = MI_Green ~ Date*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = JSUo(), data = MI_Data, control = gamlss.control(n.cyc = 250))
-summary(Green_JSUo_model)
+# Green_JSUo_model <- gamlss(formula = MI_Green ~ Date*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = JSUo(), data = MI_Data, control = gamlss.control(n.cyc = 250))
+# summary(Green_JSUo_model)
 
 #Dino
 MI_Data$orderTreatment = ordered(MI_Data$Treatment, levels = c("Control", "25C", "30C"))
@@ -370,8 +370,8 @@ MI_Data$orderTreatment = ordered(MI_Data$Treatment, levels = c("Control", "25C",
 test <- Dino0 %>%
   mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C"))
 
-Dino_SHASHo_model <- gamlss(formula = MI_Dino_scaled ~ Date*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = SHASHo(), data = test, control = gamlss.control(n.cyc = 250))
-summary(Dino_SHASHo_model)
+# Dino_SHASHo_model <- gamlss(formula = MI_Dino_scaled ~ Date*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = SHASHo(), data = test, control = gamlss.control(n.cyc = 250))
+# summary(Dino_SHASHo_model)
 ```
 
 ### PAM data
@@ -435,9 +435,9 @@ This data tells us to use the SHASH distribution for our PAM model.
 
 ```{r, warning=FALSE, message=FALSE}
 # Modelling fitDist
-PAM_model <- gamlss(formula = PAM_avg ~ Date*Treatment + random(Species_ID), family = SHASH(), data = filtered_PAM_data, control = gamlss.control(n.cyc = 250))
-
-summary(PAM_model)
+# PAM_model <- gamlss(formula = PAM_avg ~ Date*Treatment + random(Species_ID), family = SHASH(), data = filtered_PAM_data, control = gamlss.control(n.cyc = 250))
+# 
+# summary(PAM_model)
 ```
 
 Findings:
