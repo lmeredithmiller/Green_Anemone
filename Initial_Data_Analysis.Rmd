@@ -26,6 +26,7 @@ library(cowplot)
 library(here)
 library(plotrix)
 library(tidyverse)
+library(FSA)
 ```
 
 ```{r, warning=FALSE, message=FALSE}
@@ -180,20 +181,24 @@ Change in density calculations on Symbiont data
 ```{r}
 Delta_Data_model <- delta_data %>% 
   mutate(Green_Density_Scaled = Delta_Green_Density + 0.01) %>% 
-  mutate(Dino_Density_Scaled = Delta_Dino_Density + 0.01)
+  mutate(Dino_Density_Scaled = Delta_Dino_Density + 0.01) %>% 
+  mutate(Green_log = log(abs(Green_Density_Scaled))) %>% 
+  mutate(Dino_log = log(abs(Dino_Density_Scaled))) 
+```
 
+```{r}
 #Green
-DeltaGreen_fist <- fitDist(Green_Density_Scaled, data = Delta_Data_model, type = "realline", try.gamlss = T)
-DeltaGreen_hist <- histDist(Delta_Data_model$Green_Density_Scaled, "PE", density = F, main = "Power Exponential")
+DeltaGreen_fist <- fitDist(Green_log, data = Delta_Data_model, type = "realline", try.gamlss = T)
+DeltaGreen_hist <- histDist(Delta_Data_model$Green_Density_Scaled, "ST2", density = F, main = "Skew t")
 
-DeltaGreen_model <- gamlss(formula = Green_Density_Scaled ~ Date*Treatment + random(Species_ID) + random(Field_Site), family = PE(), method = RS(), data = Delta_Data_model, control = gamlss.control(n.cyc = 250))
+DeltaGreen_model <- gamlss(formula = Green_log ~ Date*Treatment + random(Species_ID) + random(Field_Site), family = ST2(), method = RS(), data = Delta_Data_model, control = gamlss.control(n.cyc = 250))
 summary(DeltaGreen_model)
 
 #Dino
-DeltaDino_fist <- fitDist(Dino_Density_Scaled, data = Delta_Data_model, type = "realline", try.gamlss = T)
-DeltaGreen_hist <- histDist(Delta_Data_model$Dino_Density_Scaled, "SHASHo2", density = F, main = "SHASHo2")
+DeltaDino_fist <- fitDist(Dino_log, data = Delta_Data_model, type = "realline", try.gamlss = T)
+DeltaGreen_hist <- histDist(Delta_Data_model$Dino_log, "PE2", density = F, main = "Power Exponential Type 2")
 
-DeltaDino_model <- gamlss(formula = Dino_Density_Scaled ~ Date*Treatment + random(Species_ID) + random(Field_Site), family = SHASHo2(), data = Delta_Data_model, control = gamlss.control(n.cyc = 250))
+DeltaDino_model <- gamlss(formula = Dino_log ~ Date*Treatment + random(Species_ID) + random(Field_Site), family = PE2(), data = Delta_Data_model, control = gamlss.control(n.cyc = 250))
 summary(DeltaDino_model)
 ```
 
@@ -562,7 +567,6 @@ test <- Feeding_Data %>%
   filter(Species_ID != "G15S")
 
 TukeyHSD(aov(Feeding_Time_Min ~ Date*Treatment, data = test))
-library(FSA)
 dunnTest(Feeding_Time_Min ~ Treatment, data = test)
 check_model(lm(Feeding_Time_Min ~ Date*Treatment, data = test))
 
