@@ -617,6 +617,7 @@ summary(ord_model)
 cols_for_behaviour = c("Open" = "bisque1", "Partial" = "brown2", "Closed" = "darkred")
 behaviour_data <- heat_data %>% 
   group_by(Day, Treatment, Time_Block) %>% 
+  mutate(Treatment, fct_relevel(Treatment, "Control", "25C", "30C")) %>% 
   count(Open_Closed)
 
 behaviour_plot <- ggplot(data = behaviour_data, aes(x = Time_Block, y = n, fill = Open_Closed)) + 
