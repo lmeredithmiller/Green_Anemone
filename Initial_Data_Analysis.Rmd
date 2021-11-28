@@ -26,6 +26,7 @@ library(cowplot)
 library(here)
 library(plotrix)
 library(tidyverse)
+library(FSA)
 ```
 
 ```{r, warning=FALSE, message=FALSE}
@@ -108,7 +109,7 @@ Green_Symbionts <- health_data %>%
   filter(Green_Density != 0) %>% 
   mutate(Acclimation_Period = as.factor(Acclimation_Period)) %>% 
   group_by(Treatment, Date) %>% 
-  mutate(Mean_Green_Log = mean(Green_Density_Log), SE_Green_Log = std.error(Green_Density_Log))
+  mutate(Mean_Green_Log = mean(Green_Density_Log), SE_Green_Log = std.error(Green_Density_Log)) 
 
 Dino_Symbionts <- health_data %>% 
   select(-c(Event, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True)) %>% 
@@ -176,21 +177,35 @@ summary(Dino_Gamma_model)
 The green density data was run with a weibull distribution. This model shows significance in 30C treatment.
 Data from running with time points
 
-Change in density calculations onn Symbiont data
+Change in density calculations on Symbiont data
+```{r}
+Delta_Data_model <- delta_data %>% 
+  mutate(Green_Density_Scaled = Delta_Green_Density + 0.01) %>% 
+  mutate(Dino_Density_Scaled = Delta_Dino_Density + 0.01) %>% 
+  mutate(Green_log = log(abs(Green_Density_Scaled))) %>% 
+  mutate(Dino_log = log(abs(Dino_Density_Scaled))) 
+```
+
+ ST2      ST1      SST     EGB2      SN2      JSU     
+144.9808 144.9809 144.9875 145.5837 146.8703 148.2934  
+
 ```{r}
 #Green
-DeltaGreen_fist <- fitDist(Delta_Green_Density, data = delta_data, type = "realAll", try.gamlss = T)
-DeltaGreen_hist <- histDist(delta_data$Delta_Green_Density, "PE", density = F, main = "Power Exponential")
+DeltaGreen_fist <- fitDist(Green_log, data = Delta_Data_model, type = "realline", try.gamlss = T)
+DeltaGreen_hist <- histDist(Delta_Data_model$Green_log, "JSU", density = F, main = "JSU")
 
-# DeltaGreen_model <- gamlss(formula = Delta_Green_Density ~ Date*Treatment + random(Species_ID) + random(Field_Site), family = PE(), data = delta_data, control = gamlss.control(n.cyc = 250))
-# summary(DeltaGreen_model)
+# check distributions with similar AIC values
+DeltaGreen_fist$fits
+
+DeltaGreen_model <- gamlss(formula = Green_log ~ Treatment + random(Species_ID) + random(Field_Site), family = JSU(), method = CG(), data = Delta_Data_model, control = gamlss.control(n.cyc = 300))
+summary(DeltaGreen_model)
 
 #Dino
-DeltaDino_fist <- fitDist(Delta_Dino_Density, data = delta_data, type = "realAll", try.gamlss = T)
-DeltaGreen_hist <- histDist(delta_data$Delta_Dino_Density, "JSUo", density = F, main = "JSUo")
+DeltaDino_fist <- fitDist(Dino_log, data = Delta_Data_model, type = "realline", try.gamlss = T)
+DeltaGreen_hist <- histDist(Delta_Data_model$Dino_log, "PE2", density = F, main = "Power Exponential Type 2")
 
-#DeltaDino_model <- gamlss(formula = Delta_Dino_Density ~ Date*Treatment + random(Species_ID) + random(Field_Site), family = JSUo(), data = delta_data, control = gamlss.control(n.cyc = 250))
-#summary(DeltaDino_model)
+DeltaDino_model <- gamlss(formula = Dino_log ~ Treatment + random(Species_ID) + random(Field_Site), family = PE2(), method = mixed(50,100), data = Delta_Data_model, control = gamlss.control(n.cyc = 250))
+summary(DeltaDino_model)
 ```
 
 Plots for symbiont data:
@@ -292,9 +307,11 @@ lnorm_test(MI_Data$MI_Green)       #p-value = NA
 normal_test(MI_Data$MI_Green)      #p-value < 0.05, not normal
 weibull_test(MI_Data$MI_Green)     #p-value = NA
 
-MIGreen_fit <- fitDist(MI_Green, data = MI_Data, type = "realAll", try.gamlss = T)
+MIGreen_fit <- fitDist(MI_Green, data = MI_Data, type = "realline", try.gamlss = T)
 #family JSUo 
-MIGreen_hist <- histDist(MI_Data$MI_Green, "JSUo", density = F, main = "Johnson")
+MIGreen_hist <- histDist(MI_Data$MI_Green, "JSUo", density = F, main = "Johnson SU original")
+
+dunnTest(MI_Green ~ Treatment, data = MI_Data)
 
 #Dinos
 exp_test(MI_Data$MI_Dino)           #p-value = NA
@@ -306,6 +323,9 @@ weibull_test(MI_Data$MI_Dino)       #p-value = NA
 MIDino_fit <- fitDist(MI_Dino_scaled, data = MI_Data, type = "realAll", try.gamlss = T)
 #family SHASHo
 MIDino_hist <- histDist(Dino0$MI_Dino_scaled, "SHASHo", density = T, main = "SHASHo")
+
+dunnTest(MI_Dino ~ Treatment, data = MI_Data)
+
 ```
 
 ```{r}
@@ -316,19 +336,16 @@ dunnTest(MI_Dino ~ Treatment, data = MI_Data)
 Running Models on MI data:
 ```{r}
 #Green
-MI_Data$orderTreatment = ordered(MI_Data$Treatment, levels = c("Control", "25C", "30C"))
-
-# Green_JSUo_model <- gamlss(formula = MI_Green ~ Date*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = JSUo(), data = MI_Data, control = gamlss.control(n.cyc = 250))
-# summary(Green_JSUo_model)
-
-#Dino
-MI_Data$orderTreatment = ordered(MI_Data$Treatment, levels = c("Control", "25C", "30C"))
-
-test <- Dino0 %>%
-  mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C"))
-
-# Dino_SHASHo_model <- gamlss(formula = MI_Dino_scaled ~ Date*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = SHASHo(), data = test, control = gamlss.control(n.cyc = 250))
-# summary(Dino_SHASHo_model)
+# MI_Data$orderTreatment = ordered(MI_Data$Treatment, levels = c("Control", "25C", "30C"))
+# 
+# Green_JSUo_model <- gamlss(formula = MI_Green_Scaled ~ Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = JSUo(), data = MI_Data, control = gamlss.control(n.cyc = 250))
+# # summary(Green_JSUo_model)
+# 
+# #Dino
+# MI_Data$orderTreatment = ordered(MI_Data$Treatment, levels = c("Control", "25C", "30C"))
+# 
+# Dino_SHASHo_model <- gamlss(formula = MI_Dino_Scaled ~ Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = SHASHo(), data = test, control = gamlss.control(n.cyc = 250))
+# # summary(Dino_SHASHo_model)
 ```
 
 ```{r}
@@ -388,7 +405,7 @@ If we get get a p-value < 0.5, then they is a significant differnce between the 
 exp_test(filtered_PAM_data$PAM_avg)        #p-value < 0.05, cannot use
 gamma_test(filtered_PAM_data$PAM_avg)      #p-value < 0.05, cannot use
 lnorm_test(filtered_PAM_data$PAM_avg)      #p-value < 0.05, cannot use
-normal_test(filtered_PAM_data$PAM_avg)     #p-value < 0.05, cannot use
+normal_test(filtered_PAM_data$PAM_avg)     #p-value < 0.05, not normal
 weibull_test(filtered_PAM_data$PAM_avg)    #p-value < 0.05, cannot use
 ```
 
@@ -412,9 +429,9 @@ histDist(y, family = SHASH, density = FALSE,
 This data tells us to use the SHASH distribution for our PAM model. 
 
 ```{r, warning=FALSE, message=FALSE}
-# Modelling fitDist
-# PAM_model <- gamlss(formula = PAM_avg ~ Date*Treatment + random(Species_ID), family = SHASH(), data = filtered_PAM_data, control = gamlss.control(n.cyc = 250))
-#  
+#Modelling fitDist
+#PAM_model <- gamlss(formula = PAM_avg ~ Date*Treatment + random(Species_ID), family = SHASH(), data = filtered_PAM_data, control = gamlss.control(n.cyc = 250))
+# 
 # summary(PAM_model)
 ```
 
@@ -603,6 +620,19 @@ Feeding_Data$orderTreatment = ordered(Feeding_Data$Treatment, levels = c("Contro
 
 Feeding_lNorm_model <- gamlss(formula = Feeding_Time_Min ~ Date*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = LOGNO(), data = Feeding_Data, control = gamlss.control(n.cyc = 3))
 summary(Feeding_lNorm_model)
+
+```
+
+```{r}
+# sara's scribbles
+
+test <- Feeding_Data %>%
+  filter(Species_ID != "G15S")
+
+TukeyHSD(aov(Feeding_Time_Min ~ Date*Treatment, data = test))
+dunnTest(Feeding_Time_Min ~ Treatment, data = test)
+check_model(lm(Feeding_Time_Min ~ Date*Treatment, data = test))
+
 ```
 
 Plot:
