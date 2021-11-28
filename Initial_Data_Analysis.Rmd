@@ -191,21 +191,21 @@ Delta_Data_model <- delta_data %>%
 
 ```{r}
 #Green
-DeltaGreen_fist <- fitDist(Green_log, data = Delta_Data_model, type = "realline", try.gamlss = T)
-DeltaGreen_hist <- histDist(Delta_Data_model$Green_log, "JSU", density = F, main = "JSU")
-
-# check distributions with similar AIC values
-DeltaGreen_fist$fits
-
-DeltaGreen_model <- gamlss(formula = Green_log ~ Treatment + random(Species_ID) + random(Field_Site), family = JSU(), method = CG(), data = Delta_Data_model, control = gamlss.control(n.cyc = 300))
-summary(DeltaGreen_model)
-
-#Dino
-DeltaDino_fist <- fitDist(Dino_log, data = Delta_Data_model, type = "realline", try.gamlss = T)
-DeltaGreen_hist <- histDist(Delta_Data_model$Dino_log, "PE2", density = F, main = "Power Exponential Type 2")
-
-DeltaDino_model <- gamlss(formula = Dino_log ~ Treatment + random(Species_ID) + random(Field_Site), family = PE2(), method = mixed(50,100), data = Delta_Data_model, control = gamlss.control(n.cyc = 250))
-summary(DeltaDino_model)
+# DeltaGreen_fist <- fitDist(Green_log, data = Delta_Data_model, type = "realline", try.gamlss = T)
+# DeltaGreen_hist <- histDist(Delta_Data_model$Green_log, "JSU", density = F, main = "JSU")
+# 
+# # check distributions with similar AIC values
+# DeltaGreen_fist$fits
+# 
+# DeltaGreen_model <- gamlss(formula = Green_log ~ Treatment + random(Species_ID) + random(Field_Site), family = JSU(), method = CG(), data = Delta_Data_model, control = gamlss.control(n.cyc = 300))
+# summary(DeltaGreen_model)
+# 
+# #Dino
+# DeltaDino_fist <- fitDist(Dino_log, data = Delta_Data_model, type = "realline", try.gamlss = T)
+# DeltaGreen_hist <- histDist(Delta_Data_model$Dino_log, "PE2", density = F, main = "Power Exponential Type 2")
+# 
+# DeltaDino_model <- gamlss(formula = Dino_log ~ Treatment + random(Species_ID) + random(Field_Site), family = PE2(), method = mixed(50,100), data = Delta_Data_model, control = gamlss.control(n.cyc = 250))
+# summary(DeltaDino_model)
 ```
 
 Plots for symbiont data:
@@ -300,31 +300,27 @@ Checking Distributions on MI data:
 
 MI GREEN AND MI DINO NOT FOUND *** trouble shoot 
 ```{r, warning=FALSE, message=FALSE}
-#Greens
-exp_test(MI_Data$MI_Green)         #p-value = NA
-gamma_test(MI_Data$MI_Green)       #p-value = NA
-lnorm_test(MI_Data$MI_Green)       #p-value = NA
-normal_test(MI_Data$MI_Green)      #p-value < 0.05, not normal
-weibull_test(MI_Data$MI_Green)     #p-value = NA
-
-MIGreen_fit <- fitDist(MI_Green, data = MI_Data, type = "realline", try.gamlss = T)
-#family JSUo 
-MIGreen_hist <- histDist(MI_Data$MI_Green, "JSUo", density = F, main = "Johnson SU original")
-
-dunnTest(MI_Green ~ Treatment, data = MI_Data)
-
-#Dinos
-exp_test(MI_Data$MI_Dino)           #p-value = NA
-gamma_test(MI_Data$MI_Dino)         #p-value = NA
-lnorm_test(MI_Data$MI_Dino)         #p-value = NA
-normal_test(MI_Data$MI_Dino)        #p-value < 0.05, not normal
-weibull_test(MI_Data$MI_Dino)       #p-value = NA
-
-MIDino_fit <- fitDist(MI_Dino_scaled, data = MI_Data, type = "realAll", try.gamlss = T)
-#family SHASHo
-MIDino_hist <- histDist(Dino0$MI_Dino_scaled, "SHASHo", density = T, main = "SHASHo")
-
-dunnTest(MI_Dino ~ Treatment, data = MI_Data)
+# #Greens
+# exp_test(MI_Data$MI_Green)         #p-value = NA
+# gamma_test(MI_Data$MI_Green)       #p-value = NA
+# lnorm_test(MI_Data$MI_Green)       #p-value = NA
+# normal_test(MI_Data$MI_Green)      #p-value < 0.05, not normal
+# weibull_test(MI_Data$MI_Green)     #p-value = NA
+# 
+# MIGreen_fit <- fitDist(MI_Green, data = MI_Data, type = "realline", try.gamlss = T)
+# #family JSUo 
+# MIGreen_hist <- histDist(MI_Data$MI_Green, "JSUo", density = F, main = "Johnson SU original")
+# 
+# #Dinos
+# exp_test(MI_Data$MI_Dino)           #p-value = NA
+# gamma_test(MI_Data$MI_Dino)         #p-value = NA
+# lnorm_test(MI_Data$MI_Dino)         #p-value = NA
+# normal_test(MI_Data$MI_Dino)        #p-value < 0.05, not normal
+# weibull_test(MI_Data$MI_Dino)       #p-value = NA
+# 
+# MIDino_fit <- fitDist(MI_Dino_scaled, data = MI_Data, type = "realAll", try.gamlss = T)
+# #family SHASHo
+# MIDino_hist <- histDist(MI_Dino_scaled$MI_Dino_scaled, "SHASHo", density = T, main = "SHASHo")
 
 ```
 
