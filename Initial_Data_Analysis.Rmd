@@ -297,7 +297,6 @@ shapiro.test(MIDino_log$MI_Data)      #p-value < 0.05, not normal distribution
 ```
 
 Checking Distributions on MI data:
-
 MI GREEN AND MI DINO NOT FOUND *** trouble shoot 
 ```{r, warning=FALSE, message=FALSE}
 # #Greens
@@ -324,10 +323,19 @@ MI GREEN AND MI DINO NOT FOUND *** trouble shoot
 
 ```
 
+Dunn Test on MI Data:
 ```{r}
 dunnTest(MI_Green ~ Treatment, data = MI_Data)
 dunnTest(MI_Dino ~ Treatment, data = MI_Data)
 ```
+Dunn test results for Green:
+25C - 30C: 0.007182786	
+25C - Control: 0.149347449	
+30C - Control: 0.165644824
+Dunn test results for Dino:
+25C - 30C: 0.9420003	
+25C - Control: 1.0000000	
+30C - Control: 1.0000000	
 
 Running Models on MI data:
 ```{r}
@@ -346,6 +354,15 @@ Running Models on MI data:
 
 ```{r}
 green_MI_plot <- ggplot(Green_Symbionts, aes(x = Date, y = MI_Green)) +
+  geom_boxplot() +
+  xlab("Event") +
+  ylab("Mitotic index") +
+  facet_grid(. ~ Treatment) +
+  theme_test()
+green_MI_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+                              "11/13/2021" = "Recovery"))
+
+dino_MI_plot <- ggplot(Green_Symbionts, aes(x = Date, y = MI_Dino)) +
   geom_boxplot() +
   xlab("Event") +
   ylab("Mitotic index") +
@@ -566,7 +583,7 @@ Size_Data$orderTreatment = ordered(Size_Data$Treatment, levels = c("Control", "2
 Size_lNorm_model <- gamlss(formula = Base_Diameter_mm ~ Date*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = LOGNO(), data = Size_Data, control = gamlss.control(n.cyc = 4))
 summary(Size_lNorm_model)
 ```
-We have significance in our 30C treatment. 
+The control and 25 did have significant values, but the 30 did not. Did they grow in control and 25 but not 30 which means they could be stressed out at 30 and not in control or 25 at the end of recovery?
 
 **Size Graph**
 ```{r, warning=FALSE, message=FALSE}
@@ -575,6 +592,7 @@ ggplot(Size_Data, aes(x = Date, y = Base_Diameter_mm)) +
   facet_grid(. ~ Treatment) +
   theme_test()
 ```
+
 
 ### Feeding Data
 ```{r, warning=FALSE, message=FALSE}
