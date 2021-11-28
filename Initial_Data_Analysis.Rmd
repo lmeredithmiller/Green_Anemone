@@ -326,16 +326,23 @@ MI GREEN AND MI DINO NOT FOUND *** trouble shoot
 Dunn Test on MI Data:
 ```{r}
 dunnTest(MI_Green ~ Treatment, data = MI_Data)
+kruskal.test(MI_Green ~ Treatment, data = MI_Data)
+
 dunnTest(MI_Dino ~ Treatment, data = MI_Data)
+kruskal.test(MI_Dino ~ Treatment, data = MI_Data)
 ```
 Dunn test results for Green:
-25C - 30C: 0.007182786	
-25C - Control: 0.149347449	
-30C - Control: 0.165644824
+25C - 30C: Z = -3.036/ Padju = 0.007182786	
+25C - Control: Z = -1.4418/ Padju = 0.149347449	
+30C - Control: Z = 1.7345/ Padju = 0.165644824
+Kruskal test results for Green:
+chi-squared = 9.492, df = 2, p = 0.008686
 Dunn test results for Dino:
-25C - 30C: 0.9420003	
-25C - Control: 1.0000000	
-30C - Control: 1.0000000	
+25C - 30C: Z = -0.072756/ Padju = 0.9420003	
+25C - Control: Z = -0.60896/ Padju = 1.0000000	
+30C - Control: Z = -0.6185/ Padju = 1.0000000	
+Kruskal test results for Dino:
+chi-squared = 0.51372, df = 2, p = 0.7735
 
 Running Models on MI data:
 ```{r}
