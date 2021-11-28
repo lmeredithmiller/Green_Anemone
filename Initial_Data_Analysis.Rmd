@@ -25,8 +25,8 @@ library(ordinal)
 library(cowplot)
 library(here)
 library(plotrix)
+library(patchwork)
 library(tidyverse)
-library(FSA)
 ```
 
 ```{r, warning=FALSE, message=FALSE}
@@ -209,27 +209,37 @@ Delta_Data_model <- delta_data %>%
 ```
 
 Plots for symbiont data:
-```{r, warning=FALSE, message=FALSE}
-green_plot <- ggplot(Green_Symbionts, aes(x = Date, y = log(Green_Density))) +
-  geom_boxplot() +
+```{r, warning=FALSE, message=FALSE, out.length="50%"}
+green_plot <- ggplot(Green_Symbionts, aes(x = Date, y = log(Green_Density), fill = Treatment)) +
+  geom_boxplot(alpha = 0.85) +
   xlab("Event") +
-  ylab("Log-transformed green algae density") +
+  ylab("Log-transformed ZC density (cells/mg)") +
   facet_grid(. ~ Treatment) +
+  scale_color_manual(values = cols_for_heat) +
+  scale_fill_manual(values = cols_for_heat) +
   theme_test()
-green_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+green_plot <- green_plot + ylim(0,12) + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
                               "11/13/2021" = "Recovery"))
-```
 
-```{r, warning=FALSE, message=FALSE}
-dino_plot <- ggplot(Dino_Symbionts, aes(x = Date, y = Dino_Density, fill = Treatment)) +
-  geom_boxplot() +
+dino_plot <- ggplot(Dino_Symbionts, aes(x = Date, y = log(Dino_Density), fill = Treatment)) +
+  geom_boxplot(alpha = 0.85) +
   xlab("Event") +
-  ylab("Dinoflagelatte density") +
+  ylab("Log-transformed ZX density (cells/mg)") +
+  facet_grid(. ~ Treatment) +
+  scale_color_manual(values = cols_for_heat) +
+  scale_fill_manual(values = cols_for_heat) +
   theme_test()
-dino_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+dino_plot <- dino_plot + ylim(0,12) + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
                               "11/13/2021" = "Recovery"))
+
+density_plot = (green_plot + dino_plot) + plot_layout(ncol=1)
+density_plot <- density_plot + plot_annotation(tag_levels = 'A')
+density_plot
+
+ggsave(here("./images/density_plot.png"), density_plot, width = 10, height = 9)
 ```
 
+NOT NEEDED BECAUSE NOT USING DELTA
 I am doing a little Dan-hack on the data for the purpose of this graph. 
 
 ```{r}
@@ -408,6 +418,7 @@ summary(anova_PAM) # not significant
 ```
 
 ```{r}
+kruskal.test(PAM_avg ~ Treatment, data = filtered_PAM_data)
 dunnTest(PAM_avg ~ Treatment, data = filtered_PAM_data) 
 ```
 
@@ -667,6 +678,7 @@ feeding_plot <- ggplot(Feeding_Data, aes(x = Date, y = Feeding_Time_Min, fill = 
   theme_test()
 feeding_plot <- feeding_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat"))
 feeding_plot
+ggsave(here("./images/feeding_plot.png"), feeding_plot)
 ```
 
 ## Heat Data
@@ -693,6 +705,7 @@ heat_plot <- ggplot(data = heat_data, aes(x = Time_Block, y = Temp_avg, color = 
   scale_fill_manual(values = cols_for_heat) +
   theme_test()
 heat_plot
+ggsave(here("./images/heat_plot.png"), heat_plot)
 ```
 
 ### Ordinal Regression
@@ -716,7 +729,13 @@ behaviour_plot <- ggplot(data = behaviour_data, aes(x = Time_Block, y = n, fill 
   scale_fill_brewer(palette = "Reds") +
   theme_cowplot()
 behaviour_plot <- behaviour_plot + labs(fill = "Behaviour Response")
+behaviour_plot
 
-ggsave(here("./images/behaviour_plot.png"), behaviour_plot)
+ggsave(here("./images/behaviour_plot.png"), behaviour_plot, width = 10, height = 6)
+```
+
+```{r}
+otter_simulations = (stage_timeseries2 | stage_timeseries3)
+otter_simulations + plot_annotation(tag_levels = 'A')
 ```
 
