@@ -51,7 +51,7 @@ health_data <- health_data %>%
   filter(Species_ID != "G32B" & Species_ID != "G33B") %>% 
   mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C"), 
          Event = fct_relevel("Acclimation", "Pre-heat", "Post-heat", "Recovery"))
-cols_for_heat = c("25C" = "brown2", "30C" = "darkred", "Control" = "azure4")
+cols_for_heat = c("25C" = "sienna2", "30C" = "brown3", "Control" = "azure4")
 ```
 
 We are combing the data from nov 5 (pre heat) and nov 9 (post heat) to be able to calculate the delta/change between these two dates. 
@@ -220,24 +220,6 @@ green_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "
                               "11/13/2021" = "Recovery"))
 ```
 
-```{r}
-green_plot <- ggplot(Green_Symbionts, aes(x = Treatment, y = log(Green_Density))) +
-  geom_boxplot() +
-  xlab("Event") +
-  ylab("Green algae density") +
-  facet_grid(. ~ Date) +
-  theme_test()
-green_plot 
-```
-
-```{r}
-ggplot(filter(Green_Symbionts, Date ==  "11/9/2021"), aes(x = Treatment, y = log(Green_Density + 1))) +
-  geom_boxplot() #+
-  xlab("Treatment") +
-  ylab("Green algae density") +
-  theme_test()
-```
-
 ```{r, warning=FALSE, message=FALSE}
 dino_plot <- ggplot(Dino_Symbionts, aes(x = Date, y = Dino_Density, fill = Treatment)) +
   geom_boxplot() +
@@ -246,30 +228,6 @@ dino_plot <- ggplot(Dino_Symbionts, aes(x = Date, y = Dino_Density, fill = Treat
   theme_test()
 dino_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
                               "11/13/2021" = "Recovery"))
-```
-
-```{r}
-ggplot(filter(Dino_Symbionts, Date ==  "11/9/2021"), aes(x = Treatment, y = Dino_Density)) +
-  geom_boxplot() +
-  xlab("Event") +
-  ylab("Dinoflagellate algae density") +
-  theme_test()
-```
-
-```{r}
-delta_green_density <- ggplot(delta_data, aes(x = Treatment, y = Delta_Green_Density)) +
-  geom_boxplot(colour = "darkgreen", fill = "darkgreen", alpha = 0.5) +
-  ylab("Delta green algae density") +
-  theme_test()
-delta_green_density
-```
-
-```{r}
-delta_dino_density <- ggplot(delta_data, aes(x = Treatment, y = Delta_Dino_Density)) +
-  geom_boxplot(colour = "chocolate4", fill = "chocolate4", alpha = 0.5) +
-  ylab("Delta dinoflagellate density") +
-  theme_test()
-delta_dino_density
 ```
 
 I am doing a little Dan-hack on the data for the purpose of this graph. 
@@ -290,8 +248,10 @@ delta_for_plot <- rbind(delta_green_only, delta_dino_only)
 ```
 
 ```{r}
+cols_for_symbiont = c("Dino" = "chocolate4", "Green" = "darkgreen")
 delta_density_plot <- ggplot(delta_for_plot, aes(x = Treatment, y = Density, fill = Colour)) +
-  geom_boxplot() +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = cols_for_symbiont) +
   theme_test()
 delta_density_plot
 ```
@@ -299,12 +259,6 @@ delta_density_plot
 ```{r}
 green_over_time <- ggplot(data = Green_Symbionts, aes(x=Date, y = Mean_Green_Log, colour = Treatment, group = Treatment)) +
   theme_classic() +
-  # geom_vline(xintercept = as.POSIXct("2021-11-06 09:00:00"),
-  #            linetype = "dotted", 
-  #            size = 1) +
-  # geom_vline(xintercept = as.POSIXct("2021-11-08 16:00:00"), 
-  #            linetype = "dotted", 
-  #            size = 1)+
   geom_point(size=2.5) +
   geom_linerange(aes(ymin = Mean_Green_Log - SE_Green_Log, 
                      ymax = Mean_Green_Log + SE_Green_Log)) +
@@ -315,7 +269,6 @@ green_over_time <- ggplot(data = Green_Symbionts, aes(x=Date, y = Mean_Green_Log
   scale_colour_manual(values = cols_for_heat)
 green_over_time
 ```
-
 
 #### Mitotic Index Data
 ```{r}
@@ -375,6 +328,11 @@ dunnTest(MI_Dino ~ Treatment, data = MI_Data)
 
 ```
 
+```{r}
+dunnTest(MI_Green ~ Treatment, data = MI_Data)
+dunnTest(MI_Dino ~ Treatment, data = MI_Data)
+```
+
 Running Models on MI data:
 ```{r}
 #Green
@@ -388,6 +346,17 @@ Running Models on MI data:
 # 
 # Dino_SHASHo_model <- gamlss(formula = MI_Dino_Scaled ~ Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = SHASHo(), data = test, control = gamlss.control(n.cyc = 250))
 # # summary(Dino_SHASHo_model)
+```
+
+```{r}
+green_MI_plot <- ggplot(Green_Symbionts, aes(x = Date, y = MI_Green)) +
+  geom_boxplot() +
+  xlab("Event") +
+  ylab("Mitotic index") +
+  facet_grid(. ~ Treatment) +
+  theme_test()
+green_MI_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+                              "11/13/2021" = "Recovery"))
 ```
 
 ### PAM data
@@ -404,14 +373,24 @@ PAM_data <- health_data %>%
   drop_na(Time_Point) %>%
   drop_na(PAM_avg) %>%
   group_by(Treatment, Date) %>% 
-  mutate(PAM_per_Treatment = mean(PAM_avg))
+  mutate(Mean_PAM = mean(PAM_avg), SE_PAM = std.error(PAM_avg))
 
 filtered_PAM_data = PAM_individuals %>%
   left_join(PAM_data) %>% 
-  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
-  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021")) 
+  filter(Date == "11/6/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
+  filter(Time_Point != 4) %>% 
+  mutate(Date = fct_relevel(Date, "11/6/2021", "11/9/2021", "11/13/2021")) 
 ```
-  
+
+```{r}
+anova_PAM <- aov(PAM_avg ~ Treatment, data = filtered_PAM_data)
+summary(anova_PAM) # not significant
+```
+
+```{r}
+dunnTest(PAM_avg ~ Treatment, data = filtered_PAM_data) 
+```
+
 ```{r, warning=FALSE, message=FALSE}
 shapiro.test(filtered_PAM_data$PAM_avg) # p-value < 0.05, distribution is not normal
 bartlett.test(PAM_avg ~ Treatment, data = filtered_PAM_data) # p-value < 0.05, does not meet equal variance assumptions
@@ -460,19 +439,95 @@ Findings:
 * Time point and 25C is significant, 30C is not
 * Plot avg fv/fm over all time points (this was significantly different over time)
 
+###### LOG transformation of PAM
+```{r}
+# log_PAM <- filtered_PAM_data %>%
+#   mutate(log_PAM = log(PAM_avg))
+# 
+# shapiro.test(log_PAM$PAM_avg) # p-value < 0.05, distribution is not normal
+# bartlett.test(PAM_avg ~ Treatment, data = log_PAM) # p-value < 0.05, does not meet equal variance assumptions
+# 
+# exp_test(log_PAM$PAM_avg)        #p-value < 0.05, cannot use
+# gamma_test(log_PAM$PAM_avg)      #p-value < 0.05, cannot use
+# lnorm_test(log_PAM$PAM_avg)      #p-value < 0.05, cannot use
+# normal_test(log_PAM$PAM_avg)     #p-value < 0.05, cannot use
+# weibull_test(log_PAM$PAM_avg)    #p-value < 0.05, cannot use
+# 
+# #Look for anemone resiliancy Fv/Fm
+# 
+# PAM_log_visual <- fitDist(PAM_avg, data = log_PAM, type = "realAll", try.gamlss = T)
+# PAM_log_visual #gives SHASH
+# 
+# #Visualizing fistDist
+# 
+# histDist(y, family = SHASH, density = FALSE,
+#         nbins = 10, xlab = "x", ylab = "y", data = PAM_log_visual,
+#         col.hist = "gray", border.hist = "blue",
+#         fg.hist = rainbow(12)[9])
+```
+
+```{r}
+# PAM_log_model <- gamlss(formula = PAM_avg ~ Date*Treatment + random(Species_ID), family = SHASH(), data = log_PAM, control = gamlss.control(n.cyc = 250))
+# 
+# summary(PAM_log_model)
+```
+
+###### SQRT transformation of PAM
+```{r}
+# sqrt_PAM <- filtered_PAM_data %>% 
+#   mutate(sqrt_PAM = sqrt(PAM_avg))
+# 
+# shapiro.test(sqrt_PAM$PAM_avg) # p-value < 0.05, distribution is not normal
+# bartlett.test(PAM_avg ~ Treatment, data = sqrt_PAM) # p-value < 0.05, does not meet equal variance assumptions
+# 
+# exp_test(sqrt_PAM$PAM_avg)        #p-value < 0.05, cannot use
+# gamma_test(sqrt_PAM$PAM_avg)      #p-value < 0.05, cannot use
+# lnorm_test(sqrt_PAM$PAM_avg)      #p-value < 0.05, cannot use
+# normal_test(sqrt_PAM$PAM_avg)     #p-value < 0.05, cannot use
+# weibull_test(sqrt_PAM$PAM_avg)    #p-value < 0.05, cannot use
+# 
+# #Look for anemone resiliancy Fv/Fm
+# 
+# PAM_sqrt_visual <- fitDist(PAM_avg, data = sqrt_PAM, type = "realAll", try.gamlss = T)
+# PAM_sqrt_visual #gives SHASH
+# 
+# #Visualizing fistDist
+# 
+# histDist(y, family = SHASH, density = FALSE, 
+#         nbins = 10, xlab = "x", ylab = "y", data = PAM_sqrt_visual, 
+#         col.hist = "gray", border.hist = "blue", 
+#         fg.hist = rainbow(12)[9])
+```
+
+```{r}
+# PAM_sqrt_model <- gamlss(formula = PAM_avg ~ Date*Treatment + random(Species_ID), family = SHASH(), data = sqrt_PAM, control = gamlss.control(n.cyc = 250))
+#  
+# summary(PAM_sqrt_model)
+```
+
 **PAM graphs**
 ```{r}
-PAM_avg_plot <- ggplot(data = filtered_PAM_data, aes(x = Time_Point, y = PAM_per_Treatment, color = Treatment)) +
-  geom_line() +
-  geom_point(size = 1) +
-  xlab("Time Point") +
-  ylab("PAM Measurements") +
-  scale_color_manual(values = cols_for_heat)  +
-  scale_fill_manual(values = cols_for_heat) +
+PAM_over_time <- ggplot(data = filtered_PAM_data, aes(x=Date, y = Mean_PAM, colour = Treatment, group = Treatment)) +
   theme_test() +
-  geom_segment(aes(x = 2.75, y = 0.2, xend = 2.75, yend = 0.75), size = 0.5 ,linetype = 2, colour = "black") +
-  geom_segment(aes(x = 8.25, y = 0.2, xend = 8.25, yend =0.75), size= 0.35, linetype = 2, colour = "black")
-PAM_avg_plot
+  geom_point() +
+  geom_linerange(aes(ymin = Mean_PAM - SE_PAM, 
+                     ymax = Mean_PAM + SE_PAM)) +
+  geom_line() +
+  labs(x="Event", 
+       y = "Average Photosynthetic Efficiency (Fv/Fm)") +
+  scale_fill_manual(values = cols_for_heat) +
+  scale_colour_manual(values = cols_for_heat)
+PAM_over_time + scale_x_discrete(labels=c("11/6/2021" = "Pre-heat", "11/9/2021" = "Post-heat", "11/13/2021" = "Recovery"))
+```
+
+```{r}
+# 25C - 30C	   	0.02521406	
+# 25C - Control	0.50135891	
+# 30C - Control	0.06484827	
+
+ggplot(filtered_PAM_data, aes(x = Treatment, y = PAM_avg)) +
+  geom_boxplot() +
+  theme_test()
 ```
 
 ### Size Data
@@ -519,7 +574,7 @@ We have significance in our 30C treatment.
 
 **Size Graph**
 ```{r, warning=FALSE, message=FALSE}
- ggplot(Size_Data, aes(x = Date, y = Base_Diameter_mm)) +
+ggplot(Size_Data, aes(x = Date, y = Base_Diameter_mm)) +
   geom_boxplot() +
   facet_grid(. ~ Treatment) +
   theme_test()
