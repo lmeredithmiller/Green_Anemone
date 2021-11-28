@@ -209,7 +209,7 @@ summary(DeltaDino_model)
 ```
 
 Plots for symbiont data:
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE, out.length="50%"}
 green_plot <- ggplot(Green_Symbionts, aes(x = Date, y = log(Green_Density), fill = Treatment)) +
   geom_boxplot(alpha = 0.85) +
   xlab("Event") +
@@ -236,7 +236,7 @@ density_plot = (green_plot + dino_plot) + plot_layout(ncol=1)
 density_plot <- density_plot + plot_annotation(tag_levels = 'A')
 density_plot
 
-ggsave(here("./images/density_plot.png"), density_plot)
+ggsave(here("./images/density_plot.png"), density_plot, width = 10, height = 9)
 ```
 
 NOT NEEDED BECAUSE NOT USING DELTA
@@ -710,7 +710,7 @@ behaviour_plot <- ggplot(data = behaviour_data, aes(x = Time_Block, y = n, fill 
 behaviour_plot <- behaviour_plot + labs(fill = "Behaviour Response")
 behaviour_plot
 
-ggsave(here("./images/behaviour_plot.png"), behaviour_plot)
+ggsave(here("./images/behaviour_plot.png"), behaviour_plot, width = 10, height = 6)
 ```
 
 ```{r}
