@@ -389,6 +389,36 @@ green_MI_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" 
                               "11/13/2021" = "Recovery"))
 ```
 
+```{r}
+green_MI_plot <- ggplot(Green_Symbionts, aes(x = Date, y = MI_Green, fill = Treatment)) +
+  geom_boxplot(alpha = 0.85) +
+  xlab("Event") +
+  ylab("ZC Mitotic Index (%)") +
+  facet_grid(. ~ Treatment) +
+  scale_color_manual(values = cols_for_heat) +
+  scale_fill_manual(values = cols_for_heat) +
+  theme_test()
+green_MI_plot <- green_MI_plot + ylim(0,60) + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+                              "11/13/2021" = "Recovery"))
+
+dino_MI_plot <- ggplot(Dino_Symbionts, aes(x = Date, y = MI_Dino, fill = Treatment)) +
+  geom_boxplot(alpha = 0.85) +
+  xlab("Event") +
+  ylab("ZX Mitotic Index (%)") +
+  facet_grid(. ~ Treatment) +
+  scale_color_manual(values = cols_for_heat) +
+  scale_fill_manual(values = cols_for_heat) +
+  theme_test()
+dino_MI_plot <- dino_MI_plot + ylim(0,30) + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+                              "11/13/2021" = "Recovery"))
+
+MI_plot = (green_MI_plot + dino_MI_plot) + plot_layout(ncol=1, heights=c(1.5,1))
+MI_plot <- MI_plot + plot_annotation(tag_levels = 'A')
+MI_plot
+
+ggsave(here("./images/MI_plot.png"), MI_plot, width = 10, height = 9)
+```
+
 ### PAM data
 ```{r}
 PAM_individuals <- health_data %>% 
@@ -410,11 +440,6 @@ filtered_PAM_data = PAM_individuals %>%
   filter(Date == "11/6/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
   filter(Time_Point != 4) %>% 
   mutate(Date = fct_relevel(Date, "11/6/2021", "11/9/2021", "11/13/2021")) 
-```
-
-```{r}
-anova_PAM <- aov(PAM_avg ~ Treatment, data = filtered_PAM_data)
-summary(anova_PAM) # not significant
 ```
 
 ```{r}
@@ -540,15 +565,18 @@ Findings:
 ```{r}
 PAM_over_time <- ggplot(data = filtered_PAM_data, aes(x=Date, y = Mean_PAM, colour = Treatment, group = Treatment)) +
   theme_test() +
-  geom_point() +
+  geom_point(position = position_dodge(width = 0.1)) +
   geom_linerange(aes(ymin = Mean_PAM - SE_PAM, 
-                     ymax = Mean_PAM + SE_PAM)) +
-  geom_line() +
+                     ymax = Mean_PAM + SE_PAM), position = position_dodge(width = 0.1)) +
+  geom_line(position = position_dodge(width = 0.1)) +
   labs(x="Event", 
        y = "Average Photosynthetic Efficiency (Fv/Fm)") +
   scale_fill_manual(values = cols_for_heat) +
   scale_colour_manual(values = cols_for_heat)
-PAM_over_time + scale_x_discrete(labels=c("11/6/2021" = "Pre-heat", "11/9/2021" = "Post-heat", "11/13/2021" = "Recovery"))
+PAM_over_time <- PAM_over_time + scale_x_discrete(labels=c("11/6/2021" = "Pre-heat", "11/9/2021" = "Post-heat", "11/13/2021" = "Recovery"))
+PAM_over_time
+
+ggsave(here("./images/PAM_over_time.png"), PAM_over_time)
 ```
 
 ```{r}
@@ -566,9 +594,11 @@ ggplot(filtered_PAM_data, aes(x = Treatment, y = PAM_avg)) +
 Size_Data <- health_data %>% 
   select(-c(Base_Width, Base_Length, Base_Diagonal, Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Weight_Tentacle_mg, Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Green_Density, Dino_Density, MI_Green, MI_Dino, Div_Green, Div_Dino)) %>%
   filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
-  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021")) %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021"), (Treatment = fct_relevel(Treatment, "Control", "25C", "30C"))) %>% 
   drop_na(Base_Diameter_mm) %>% 
-  mutate(Acclimation_Period = as.factor(Acclimation_Period))
+  mutate(Acclimation_Period = as.factor(Acclimation_Period)) %>% 
+  group_by(Treatment, Date) %>% 
+  mutate(Mean_Size = mean(Base_Diameter_mm), SE_Size = std.error(Base_Diameter_mm))
 ```
 
 Checking Distribution:
@@ -609,6 +639,22 @@ ggplot(Size_Data, aes(x = Date, y = Base_Diameter_mm)) +
   geom_boxplot() +
   facet_grid(. ~ Treatment) +
   theme_test()
+```
+
+```{r}
+size_plot <- ggplot(data = Size_Data, aes(x=Date, y = Mean_Size, colour = Treatment, group = Treatment)) +
+  theme_test() +
+  geom_point(position = position_dodge(width = 0.1)) +
+  geom_linerange(aes(ymin = Mean_Size - SE_Size, ymax = Mean_Size + SE_Size), position = position_dodge(width = 0.1)) +
+  geom_line(position = position_dodge(width = 0.1)) +
+  labs(x="Event", 
+       y = "Average Base Diameter (mm)") +
+  scale_fill_manual(values = cols_for_heat) +
+  scale_colour_manual(values = cols_for_heat)
+size_plot <- size_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat", "11/13/2021" = "Recovery"))
+size_plot
+
+ggsave(here("./images/size_plot.png"), size_plot)
 ```
 
 
@@ -735,7 +781,10 @@ ggsave(here("./images/behaviour_plot.png"), behaviour_plot, width = 10, height =
 ```
 
 ```{r}
-otter_simulations = (stage_timeseries2 | stage_timeseries3)
-otter_simulations + plot_annotation(tag_levels = 'A')
+behaviour_heat <- behaviour_plot + heat_plot
+behaviour_heat <- behaviour_heat + plot_layout(ncol=2)
+behaviour_heat
+
+ggsave(here("./images/behaviour_heat.png"), behaviour_heat, width = 10, height = 4)
 ```
 
