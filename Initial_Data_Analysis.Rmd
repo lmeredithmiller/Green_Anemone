@@ -44,6 +44,7 @@ health_data <- health_data %>%
   mutate(Weight_Tentacle_mg = Weight_Tentacle_g*1000) %>% 
   mutate(Green_Density = (Green_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_mg)) %>% 
   mutate(Dino_Density = (Dino_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_mg)) %>%
+  mutate(Total_Density = Green_Density + Dino_Density) %>% 
   mutate(MI_Green = (Div_Green/Green_Cells)*100, MI_Dino = (Div_Dino/Dino_Cells)*100) %>% #Bates et al. 2010
   mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), Date = as.factor(Date), 
          Event = as.factor(Event), Species_ID = as.factor(Species_ID), Field_Site = as.factor(Field_Site), 
@@ -206,6 +207,11 @@ Delta_Data_model <- delta_data %>%
 # 
 # DeltaDino_model <- gamlss(formula = Dino_log ~ Treatment + random(Species_ID) + random(Field_Site), family = PE2(), method = mixed(50,100), data = Delta_Data_model, control = gamlss.control(n.cyc = 250))
 # summary(DeltaDino_model)
+```
+
+```{r}
+ggplot(Green_Symbionts, aes(x = Date, y = log(Total_Density), fill = Treatment)) +
+  geom_boxplot()
 ```
 
 Plots for symbiont data:

@@ -6,7 +6,7 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, tidy=TRUE, tidy.opts = list(width.cutoff = 80))
 ```
 
 ## Loading library and data
@@ -137,8 +137,7 @@ bartlett.test(Dino_Density ~ Treatment, Dino_Symbionts)
 
 All p-values are <0.05 and therefore the distributions do not meet assumptions of normality and equal variance. 
 
-**Checking Distributions of Symbiont Data:**
-Determining if the data fits other distributions. 
+**Checking Distributions of Symbiont Data:** Determining if the data fits other distributions. 
 
 ```{r, warning=FALSE, message=FALSE}
 #Greens
@@ -268,7 +267,6 @@ bartlett.test(Dino_Density ~ Treatment, MI_Data) # p-value = 0.1483
 ```
 
 ZC (green) symbiont density does not meet assumptions of normality or equal variance, while ZC (dino) does not meet assumption of normality but meets the assumption of equal variance. We will run Dunn and Kruskal Wallis tests on the MI data to test for significant differences.
-
 
 **Dunn and Kruskal Wallis Test on MI Data:**
 ```{r}
@@ -581,7 +579,7 @@ ord_model = clmm(Open_Closed ~ Treatment + (1 | Bucket) + (1 | Species_ID),
 summary(ord_model) # significance in both treatments 
 ```
 
-**Open/Closed Graph**
+**Open/Closed Graph:**
 ```{r, warning=FALSE, message=FALSE}
 cols_for_behaviour = c("Open" = "olivedrab3", "Partial" = "forestgreen", "Closed" = "darkgreen")
 behaviour_data <- heat_data %>% 
@@ -611,8 +609,4 @@ behaviour_heat
 
 ggsave(here("./images/behaviour_heat.png"), behaviour_heat, width = 10, height = 4)
 ```
-
-
-
-
 
