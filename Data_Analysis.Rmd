@@ -1,0 +1,618 @@
+---
+title: "Data Analysis"
+author: "Joan Moreaux and Meredith Miller"
+date: "22/11/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading library and data
+
+```{r, warning=FALSE, message=FALSE}
+library(performance)
+library(DHARMa)
+library(mgcv)
+library(fitdistrplus)
+library(goft)
+library(gamlss)
+library(FSA) 
+library(fGarch)
+library(LambertW)
+library(ordinal)
+library(cowplot)
+library(here)
+library(plotrix)
+library(patchwork)
+library(tidyverse)
+```
+
+```{r, warning=FALSE, message=FALSE}
+health_data <- read.csv("Big_Data_Green.csv")
+heat_data <- read.csv("Heat_Data.csv")
+```
+
+## Health Data
+Includes feeding time, PAM measurements, base measurements, and symbiont density.
+
+```{r, warning=FALSE, message=FALSE}
+# Organizing the data, adding average PAM, average base diameter, and symbiont density
+health_data <- health_data %>% 
+  mutate(Fv_Fm_1 = as.numeric(Fv_Fm_1), PAM_avg = ((Fv_Fm_1 + Fv_Fm_2 + Fv_Fm_3)/3)) %>% 
+  mutate(Base_Diameter_mm = (Base_Width + Base_Length + Base_Diagonal)/3) %>%
+  mutate(Weight_Tentacle_mg = Weight_Tentacle_g*1000) %>% 
+  mutate(Green_Density = (Green_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_mg)) %>% 
+  mutate(Dino_Density = (Dino_Cells/1)*(1/0.1)*(1/0.001)*(0.5/Weight_Tentacle_mg)) %>%
+  mutate(MI_Green = (Div_Green/Green_Cells)*100, 
+         MI_Dino = (Div_Dino/Dino_Cells)*100) %>% # Bates et al. 2010
+  mutate(Bucket = as.factor(Bucket), Treatment = as.factor(Treatment), 
+         Date = as.factor(Date), Event = as.factor(Event), 
+         Species_ID = as.factor(Species_ID), Field_Site = as.factor(Field_Site), 
+         Event_True = as.factor(Event_True)) %>% 
+  filter(Species_ID != "G32B" & Species_ID != "G33B") %>% 
+  mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C"), 
+         Event = fct_relevel("Acclimation", "Pre-heat", "Post-heat", "Recovery")) 
+cols_for_heat = c("25C" = "sienna2", "30C" = "brown3", "Control" = "azure4")
+```
+
+### Symbiont Data
+#### PAM Threshold
+Determining a mimum threshold for aposymbiotic anemones that we will remove from the PAM data. From the data bellow, we decide that the threshold for PAM will be >1000 cells per mg (symbiont density).
+
+```{r, warning=FALSE, message=FALSE}
+Green_Threshold <- health_data %>% 
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, 
+            Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, 
+            Weight_Tube_g, Weight_Tentacle_g, Div_Dino, Dino_Cells, Feeding_Time_Min, 
+            Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Dino, 
+            Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Event_True, Dino_Density)) %>% 
+  drop_na(Green_Density) %>% 
+  drop_na(Time_Point) %>% 
+  filter(Green_Density != 0)
+
+Dino_Threshold <- health_data %>% 
+  select(-c(Event, Field_Site, Acclimation_Period, Base_Width, Base_Length, 
+            Base_Diagonal, Base_Diameter_mm, Nb_Tentacles, Weight_Total_g, 
+            Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Div_Green, Feeding_Time_Min, 
+            Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, Removed, MI_Green, 
+            Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, 
+            PAM_avg, Event_True, Green_Density)) %>% 
+  drop_na(Dino_Density) %>% 
+  drop_na(Time_Point) %>% 
+  filter(Dino_Density != 0)
+```
+
+#### Density Data
+Data for models of symbiont density for both zoochlorellae and zooxanthellae. It filters out unwanted columns and anemones without symbiont count.
+
+```{r, warning=FALSE, message=FALSE}
+# Organizing the data 
+Green_Symbionts <- health_data %>% 
+  select(-c(Event, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, 
+            Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, 
+            Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start,
+            Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, 
+            Event_True)) %>% 
+  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021")) %>% 
+  mutate(Green_Density_Log = log(Green_Density)) %>% 
+  drop_na(Green_Density) %>% 
+  drop_na(Dino_Density) %>% 
+  drop_na(MI_Green) %>% 
+  drop_na(MI_Dino) %>% 
+  filter(Green_Density != 0) %>% 
+  mutate(Acclimation_Period = as.factor(Acclimation_Period)) %>% 
+  group_by(Treatment, Date) %>% 
+  mutate(Mean_Green_Log = mean(Green_Density_Log), 
+         SE_Green_Log = std.error(Green_Density_Log)) 
+
+Dino_Symbionts <- health_data %>% 
+  select(-c(Event, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, 
+            Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, 
+            Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, 
+            Feeding_Start, Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, 
+            Fv_Fm_3, PAM_avg, Event_True)) %>% 
+  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021")) %>% 
+  drop_na(Green_Density) %>% 
+  drop_na(Dino_Density) %>% 
+  drop_na(MI_Green) %>% 
+  drop_na(MI_Dino) %>% 
+  filter(Dino_Density != 0) %>% 
+  mutate(Acclimation_Period = as.factor(Acclimation_Period))
+```
+
+**Checking Normality and Equal Variance:**
+```{r, warning=FALSE, message=FALSE}
+# Green
+shapiro.test(Green_Symbionts$Green_Density)      
+bartlett.test(Green_Density ~ Treatment, Green_Symbionts)      
+
+# Dino
+shapiro.test(Dino_Symbionts$Dino_Density) 
+bartlett.test(Dino_Density ~ Treatment, Dino_Symbionts)
+```
+
+All p-values are <0.05 and therefore the distributions do not meet assumptions of normality and equal variance. 
+
+**Checking Distributions of Symbiont Data:**
+Determining if the data fits other distributions. 
+
+```{r, warning=FALSE, message=FALSE}
+#Greens
+exp_test(Green_Symbionts$Green_Density)         #p-value < 0.05
+gamma_test(Green_Symbionts$Green_Density)       #p = 0.123
+lnorm_test(Green_Symbionts$Green_Density)       #p-value < 0.05
+normal_test(Green_Symbionts$Green_Density)      #p-value < 0.05
+weibull_test(Green_Symbionts$Green_Density)     #p = 0.44
+
+#Use Weibull since p value is larger than gamma
+Green_Weibull <- histDist(Green_Symbionts$Green_Density, "WEI", 
+                          density = F, main = "Weibull")
+
+#Dinos
+exp_test(Dino_Symbionts$Dino_Density)           #p-value > 0.05
+gamma_test(Dino_Symbionts$Dino_Density)         #p = 0.6709
+lnorm_test(Dino_Symbionts$Dino_Density)         #p-value < 0.05
+normal_test(Dino_Symbionts$Dino_Density)        #p-value < 0.05
+weibull_test(Dino_Symbionts$Dino_Density)       #p = 0.774
+
+#Use Gamma since p value is larger than weibull
+Dino_Gamma <- histDist(Dino_Symbionts$Dino_Density, "GA", 
+                       density = F, main = "Gamma")
+```
+
+**Running Models on Symbiont Data:**
+We chose to use our Weibull distribution for green density and Gamma distribution for dino density. Here we run our models.
+```{r, warning=FALSE, message=FALSE}
+#Green
+Green_Symbionts$orderTreatment = ordered(Green_Symbionts$Treatment, 
+                                         levels = c("Control", "25C", "30C"))
+
+Green_Weibull_model <- gamlss(formula = Green_Density ~ Date*Treatment +
+                                random(Species_ID) + random(Field_Site) + 
+                                random(Acclimation_Period), 
+                              family = WEI(), data = Green_Symbionts, 
+                              control = gamlss.control(n.cyc = 10))
+
+summary(Green_Weibull_model) # significance in the 30 degree treatment
+
+#Dino
+Dino_Symbionts$orderTreatment = ordered(Dino_Symbionts$Treatment, 
+                                        levels = c("Control", "25C", "30C"))
+
+Dino_Gamma_model <- gamlss(formula = Dino_Density ~ Date*Treatment + 
+                             random(Species_ID) + random(Field_Site) + 
+                             random(Acclimation_Period), 
+                           family = GA(), data = Dino_Symbionts, 
+                           control = gamlss.control(n.cyc = 3))
+
+summary(Dino_Gamma_model) # significance in both the 25 and 30 degree treatment
+```
+
+**Plots for symbiont data:**
+```{r, warning=FALSE, message=FALSE}
+treatment_labels = c("Control", "Mid heatwave", "Extreme heatwave")
+names(treatment_labels) = (c("Control", "25C", "30C"))
+green_plot <- ggplot(Green_Symbionts, aes(x = Date, y = log(Green_Density), 
+                                          fill = Treatment)) +
+  geom_boxplot(alpha = 0.85) +
+  xlab("Event") +
+  ylab("Log-transformed ZC density (cells/mg)") +
+  facet_grid(. ~ Treatment, 
+             labeller = labeller(Treatment = treatment_labels)) +
+  scale_fill_manual(limits = c("Control", "25C", "30C"),
+                    labels = c("Control", "Mid heatwave", "Extreme heatwave"),
+                    values = cols_for_heat) +
+  theme_test()
+
+green_plot <- green_plot + ylim(0,12) + 
+  scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+                            "11/13/2021" = "Recovery")) 
+
+dino_plot <- ggplot(Dino_Symbionts, aes(x = Date, y = log(Dino_Density), 
+                                        fill = Treatment)) +
+  geom_boxplot(alpha = 0.85) +
+  xlab("Event") +
+  ylab("Log-transformed S density (cells/mg)") +
+  facet_grid(. ~ Treatment,
+             labeller = labeller(Treatment = treatment_labels)) +
+  scale_fill_manual(limits = c("Control", "25C", "30C"),
+                    labels = c("Control", "Mid heatwave", "Extreme heatwave"),
+                    values = cols_for_heat) +
+  theme_test()
+dino_plot <- dino_plot + ylim(0,12) + 
+  scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+                            "11/13/2021" = "Recovery"))
+
+density_plot = (green_plot + dino_plot) + plot_layout(ncol=1)
+density_plot <- density_plot + plot_annotation(tag_levels = 'A')
+density_plot
+
+ggsave(here("./images/density_plot.png"), density_plot, width = 10, height = 9)
+```
+
+#### Mitotic Index Data
+MI is the amount of cell division in the symbionts, calculated as a %. 
+
+```{r, warning=FALSE, message=FALSE}
+# Organizing the data 
+MI_Data <- health_data %>% 
+  select(-c(Event, Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, 
+            Nb_Tentacles, Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, 
+            Green_Cells, Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, 
+            Feeding_Stop, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, 
+            Event_True)) %>% 
+  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021")) %>% 
+  drop_na(Green_Density) %>% 
+  drop_na(Dino_Density) %>% 
+  drop_na(MI_Green) %>% 
+  drop_na(MI_Dino) %>% 
+  mutate(Acclimation_Period = as.factor(Acclimation_Period)) %>% 
+  mutate(MI_Dino_scaled = MI_Dino + 0.01) %>% 
+  mutate(MI_Green_scaled = MI_Green + 0.01)
+```
+
+**Checking Normality and Equal Variance:**
+```{r, warning=FALSE, message=FALSE}
+#Green
+shapiro.test(MI_Data$Green_Density)      
+bartlett.test(Green_Density ~ Treatment, MI_Data)     
+
+#Dino
+shapiro.test(MI_Data$Dino_Density)     
+bartlett.test(Dino_Density ~ Treatment, MI_Data) # p-value = 0.1483
+```
+
+ZC (green) symbiont density does not meet assumptions of normality or equal variance, while ZC (dino) does not meet assumption of normality but meets the assumption of equal variance. We will run Dunn and Kruskal Wallis tests on the MI data to test for significant differences.
+
+
+**Dunn and Kruskal Wallis Test on MI Data:**
+```{r}
+kruskal.test(MI_Green ~ Treatment, data = MI_Data) # p = 0.009
+dunnTest(MI_Green ~ Treatment, data = MI_Data) # sig. difference between 25-30
+
+kruskal.test(MI_Dino ~ Treatment, data = MI_Data) # not significant 
+dunnTest(MI_Dino ~ Treatment, data = MI_Data) # not significant 
+```
+
+**Plot for MI data:**
+```{r, warning=FALSE, message=FALSE}
+green_MI_plot <- ggplot(Green_Symbionts, aes(x = Date, y = MI_Green, 
+                                             fill = Treatment)) +
+  geom_boxplot(alpha = 0.85) +
+  xlab("Event") +
+  ylab("ZC Mitotic Index (%)") +
+  facet_grid(. ~ Treatment,
+             labeller = labeller(Treatment = treatment_labels)) +
+  scale_fill_manual(limits = c("Control", "25C", "30C"),
+                    labels = c("Control", "Mid heatwave", "Extreme heatwave"),
+                    values = cols_for_heat) +
+  theme_test()
+green_MI_plot <- green_MI_plot + ylim(0,60) + 
+  scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+                            "11/13/2021" = "Recovery"))
+
+dino_MI_plot <- ggplot(Dino_Symbionts, aes(x = Date, y = MI_Dino, 
+                                           fill = Treatment)) +
+  geom_boxplot(alpha = 0.85) +
+  xlab("Event") +
+  ylab("S Mitotic Index (%)") +
+  facet_grid(. ~ Treatment,
+             labeller = labeller(Treatment = treatment_labels)) +
+  scale_fill_manual(limits = c("Control", "25C", "30C"),
+                    labels = c("Control", "Mid heatwave", "Extreme heatwave"),
+                    values = cols_for_heat) +
+  theme_test()
+dino_MI_plot <- dino_MI_plot + ylim(0,30) + 
+  scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+                            "11/13/2021" = "Recovery"))
+
+MI_plot = (green_MI_plot + dino_MI_plot) + plot_layout(ncol=1, heights=c(1.5,1))
+MI_plot <- MI_plot + plot_annotation(tag_levels = 'A')
+MI_plot
+
+ggsave(here("./images/MI_plot.png"), MI_plot, width = 10, height = 9)
+```
+
+### PAM data
+We filter out aposymbiotic anemones. 
+```{r, warning=FALSE, message=FALSE}
+# Organizing the data 
+PAM_individuals <- health_data %>% 
+  filter(Green_Density > 1000 | Dino_Density > 1000) %>% 
+  distinct(Species_ID)
+
+PAM_data <- health_data %>% 
+  select(-c(Base_Width, Base_Length, Base_Diagonal, Base_Diameter_mm, Nb_Tentacles,
+            Weight_Total_g, Weight_Tube_g, Weight_Tentacle_g, Green_Cells, Dino_Cells, 
+            Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, Photo_ID, 
+            Removed, Div_Green, Div_Dino, MI_Green, MI_Dino, Acclimation_Period, 
+            Green_Density, Dino_Density)) %>%
+  drop_na(Time_Point) %>%
+  drop_na(PAM_avg) %>%
+  group_by(Treatment, Date) %>% 
+  mutate(Mean_PAM = mean(PAM_avg), SE_PAM = std.error(PAM_avg))
+
+filtered_PAM_data = PAM_individuals %>%
+  left_join(PAM_data) %>% 
+  filter(Date == "11/6/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
+  filter(Time_Point != 4) %>% 
+  mutate(Date = fct_relevel(Date, "11/6/2021", "11/9/2021", "11/13/2021")) 
+```
+
+**Checking Normality and Equal Variance:**
+```{r, warning=FALSE, message=FALSE}
+shapiro.test(filtered_PAM_data$PAM_avg) 
+bartlett.test(PAM_avg ~ Treatment, data = filtered_PAM_data) 
+```
+
+Our data does not meet the assumptions of normality and equal variance (p < 0.05) and therefore we will use Dunn and Kruskal Wallis tests to test for significant differences. 
+
+```{r, warning=FALSE, message=FALSE}
+kruskal.test(PAM_avg ~ Treatment, data = filtered_PAM_data) # significance
+dunnTest(PAM_avg ~ Treatment, data = filtered_PAM_data) 
+# significance only between 25 and 30
+```
+
+**Plot for PAM:**
+```{r, warning=FALSE, message=FALSE}
+PAM_over_time <- ggplot(data = filtered_PAM_data, aes(x=Date, y = Mean_PAM, 
+                                                      colour = Treatment, 
+                                                      group = Treatment)) +
+  geom_point(position = position_dodge(width = 0.1)) +
+  geom_linerange(aes(ymin = Mean_PAM - SE_PAM, 
+                     ymax = Mean_PAM + SE_PAM), position = position_dodge(width = 0.1)) +
+  geom_line(position = position_dodge(width = 0.1)) +
+  labs(x="Event", 
+       y = "Average Photosynthetic Efficiency (Fv/Fm)") +
+  scale_colour_manual(limits = c("Control", "25C", "30C"),
+                    labels = c("Control", "Mid heatwave", "Extreme heatwave"),
+                    values = cols_for_heat) +
+  theme_test()
+PAM_over_time <- PAM_over_time + 
+  scale_x_discrete(labels=c("11/6/2021" = "Pre-heat", "11/9/2021" = "Post-heat", 
+                            "11/13/2021" = "Recovery"))
+PAM_over_time
+
+ggsave(here("./images/PAM_over_time.png"), PAM_over_time)
+```
+
+### Size Data
+Measuring the size of the base as a proxy for weight. 
+
+```{r, warning=FALSE, message=FALSE}
+# Organizing the data 
+Size_Data <- health_data %>% 
+  select(-c(Base_Width, Base_Length, Base_Diagonal, Nb_Tentacles, Weight_Total_g, 
+            Weight_Tube_g, Weight_Tentacle_g, Weight_Tentacle_mg, Green_Cells, 
+            Dino_Cells, Feeding_Time_Min, Feeding_Time, Feeding_Start, Feeding_Stop, 
+            Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, Fv_Fm_3, PAM_avg, Green_Density, 
+            Dino_Density, MI_Green, MI_Dino, Div_Green, Div_Dino)) %>%
+  filter(Date == "11/5/2021" | Date == "11/9/2021" | Date == "11/13/2021") %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021", "11/13/2021"), 
+        (Treatment = fct_relevel(Treatment, "Control", "25C", "30C"))) %>% 
+  drop_na(Base_Diameter_mm) %>% 
+  mutate(Acclimation_Period = as.factor(Acclimation_Period)) %>% 
+  group_by(Treatment, Date) %>% 
+  mutate(Mean_Size = mean(Base_Diameter_mm), SE_Size = std.error(Base_Diameter_mm))
+```
+
+**Checking for Normality and Equal Variance:**
+```{r, warning=FALSE, message=FALSE}
+shapiro.test(Size_Data$Base_Diameter_mm)
+bartlett.test(Base_Diameter_mm ~ Treatment, data = Size_Data)
+```
+
+The distributions do not meet assumptions of normality but does meet the assumption of equal variance. 
+
+**Checking Distributions of Symbiont Data:**
+Determining if the data fits other distributions. 
+
+```{r, warning=FALSE, message=FALSE}
+exp_test(Size_Data$Base_Diameter_mm)            #p-value < 0.05
+gamma_test(Size_Data$Base_Diameter_mm)          #p = 0.1874
+lnorm_test(Size_Data$Base_Diameter_mm)          #p = 0.4117
+normal_test(Size_Data$Base_Diameter_mm)         #p-value < 0.05
+weibull_test(Size_Data$Base_Diameter_mm)        #p-value < 0.05
+
+# Run lnorm since it has the higest p value
+Size_lnorm <- histDist(Size_Data$Base_Diameter_mm, "LOGNO", density = T, main = "lNorm")
+
+# Choosing the best distribution by comparing AIC values
+Size_lnorm <- histDist(Size_Data$Base_Diameter_mm, "LOGNO", density = T, main = "lNorm")
+#AIC = 880.625
+Feeding_Gamma <- histDist(Size_Data$Base_Diameter_mm, "GA", density = F, main = "Gamma")
+#AIC = 883.161
+```
+
+**Running Models:**
+We are going to run a lNorm model on our size data because the p value is larger and AIC value is smaller. 
+
+```{r}
+Size_Data$orderTreatment = ordered(Size_Data$Treatment, levels = c("Control", "25C", "30C"))
+
+Size_lNorm_model <- gamlss(formula = Base_Diameter_mm ~ Date*Treatment + 
+                             random(Species_ID) + random(Field_Site) + 
+                             random(Acclimation_Period), 
+                           family = LOGNO(), data = Size_Data, 
+                           control = gamlss.control(n.cyc = 4))
+summary(Size_lNorm_model) # significant in 30
+```
+
+The control and 25 did have significant values, but the 30 did not. 
+
+**Plot for Size:**
+```{r}
+size_plot <- ggplot(data = Size_Data, aes(x=Date, y = Mean_Size, 
+                                          colour = Treatment, group = Treatment)) +
+  geom_point(position = position_dodge(width = 0.1)) +
+  geom_linerange(aes(ymin = Mean_Size - SE_Size, ymax = Mean_Size + SE_Size), 
+                 position = position_dodge(width = 0.1)) +
+  geom_line(position = position_dodge(width = 0.1)) +
+  labs(x="Event", 
+       y = "Average Base Diameter (mm)") +
+  scale_colour_manual(limits = c("Control", "25C", "30C"),
+                    labels = c("Control", "Mid heatwave", "Extreme heatwave"),
+                    values = cols_for_heat) +
+  theme_test()
+
+size_plot <- size_plot + 
+  scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat", 
+                            "11/13/2021" = "Recovery"))
+size_plot
+
+ggsave(here("./images/size_plot.png"), size_plot)
+```
+
+### Feeding Data
+This is the feeding time before and after heatwaves. 
+
+```{r, warning=FALSE, message=FALSE}
+# Organizing the data 
+Feeding_Data <- health_data %>% 
+  select(-c(Base_Width, Base_Length, Base_Diagonal, Nb_Tentacles, Weight_Total_g, 
+            Weight_Tube_g, Weight_Tentacle_g, Weight_Tentacle_mg, Green_Cells, 
+            Dino_Cells, Base_Diameter_mm, Photo_ID, Removed, Fv_Fm_1, Fv_Fm_2, 
+            Fv_Fm_3, PAM_avg, Green_Density, Dino_Density, MI_Green, MI_Dino,
+            Div_Green, Div_Dino)) %>%
+  filter(Date == "11/5/2021" | Date == "11/9/2021") %>% 
+  mutate(Date = fct_relevel(Date, "11/5/2021", "11/9/2021")) %>% 
+  drop_na(Feeding_Time_Min) %>% 
+  mutate(Acclimation_Period = as.factor(Acclimation_Period))
+```
+
+**Checking for Normality and Equal Variance:**
+```{r, warning=FALSE, message=FALSE}
+shapiro.test(Feeding_Data$Feeding_Time_Min)   
+bartlett.test(Feeding_Time_Min ~ Treatment, data = Feeding_Data)
+```
+
+Distribution is not normal but meets the assumption of equal variance. We will check if it fits other distributions.  
+
+**Checking Distributions:**
+Determining if the data fits other distributions. 
+
+```{r, warning=FALSE, message=FALSE}
+exp_test(Feeding_Data$Feeding_Time_Min)            #p-value < 0.05
+gamma_test(Feeding_Data$Feeding_Time_Min)          #p = 0.3717
+lnorm_test(Feeding_Data$Feeding_Time_Min)          #p = 0.6937
+normal_test(Feeding_Data$Feeding_Time_Min)         #p-value < 0.05
+weibull_test(Feeding_Data$Feeding_Time_Min)        #p = 0.088
+
+# Choosing the best distribution by comparing AIC value
+Feeding_lnorm <- histDist(Feeding_Data$Feeding_Time_Min, "LOGNO", 
+                          density = T, main = "lNorm") #AIC = 112.738
+Feeding_Gamma <- histDist(Feeding_Data$Feeding_Time_Min, "GA", 
+                          density = F, main = "Gamma") #AIC = 116.789
+Green_Weibull <- histDist(Feeding_Data$Feeding_Time_Min, "WEI", 
+                          density = F, main = "Weibull") #AIC = 115.143
+```
+
+**Running model:**
+We are going to use the lnorm distribution because the p value is larger and AIC value is smaller.
+```{r, warning=FALSE, message=FALSE}
+Feeding_Data$orderTreatment = ordered(Feeding_Data$Treatment, 
+                                      levels = c("Control", "25C", "30C"))
+
+Feeding_lNorm_model <- gamlss(formula = Feeding_Time_Min ~ Date*Treatment + 
+                                random(Species_ID) + random(Field_Site) + 
+                                random(Acclimation_Period), 
+                              family = LOGNO(), data = Feeding_Data, 
+                              control = gamlss.control(n.cyc = 3))
+summary(Feeding_lNorm_model) # significance is only in post-heat 30C
+```
+
+**Plot for Feeding:**
+```{r, warning=FALSE, message=FALSE}
+feeding_plot <- ggplot(Feeding_Data, aes(x = Date, y = Feeding_Time_Min, fill = Treatment)) +
+  geom_boxplot(alpha=0.85) +
+  xlab("Event") +
+  ylab("Feeding Time (minutes)") +
+  scale_fill_manual(limits = c("Control", "25C", "30C"),
+                    labels = c("Control", "Mid heatwave", "Extreme heatwave"),
+                    values = cols_for_heat) +
+  theme_test()
+feeding_plot <- feeding_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat"))
+feeding_plot
+ggsave(here("./images/feeding_plot.png"), feeding_plot)
+```
+
+## Heat Data
+Includes temperature during heatwave and behavioral responses (open vs closed)
+
+```{r, warning=FALSE, message=FALSE}
+heat_data <- heat_data %>% 
+  mutate(Open_Closed = as.factor(Open_Closed), Bucket = as.factor(Bucket), 
+         Treatment = as.factor(Treatment), Field_Site = as.factor(Field_Site)) %>% 
+  mutate(Open_Closed = fct_relevel(Open_Closed, "Open", "Partial", "Closed")) %>% 
+  mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C")) %>% 
+  group_by(Treatment, Time_Block) %>% 
+  mutate(Temp_avg = mean(Bucket_Temp))
+```
+
+**Temperature over Time Graph:**
+```{r, warning=FALSE, message=FALSE}
+heat_plot <- ggplot(data = heat_data, aes(x = Time_Block, y = Temp_avg, color = Treatment)) +
+  geom_point(size = 1) +
+  geom_line(alpha = 1.5) +
+  xlab("Time (hours)") +
+  ylab("Temperature (°C)") +
+  scale_colour_manual(limits = c("Control", "25C", "30C"),
+                    labels = c("Control", "Mid heatwave", "Extreme heatwave"),
+                    values = cols_for_heat) +
+  theme(axis.title.x = element_text(size=10),
+        axis.title.y = element_text(size=10)) +
+  theme_test() 
+heat_plot <- heat_plot + theme(legend.key.size = unit(0.75, 'lines'))
+heat_plot
+
+ggsave(here("./images/heat_plot.png"), heat_plot)
+```
+
+### Ordinal Regression
+Model to test significance on the open/partial/closed data. 
+```{r}
+ord_model = clmm(Open_Closed ~ Treatment + (1 | Bucket) + (1 | Species_ID), 
+                 data = heat_data)
+summary(ord_model) # significance in both treatments 
+```
+
+**Open/Closed Graph**
+```{r, warning=FALSE, message=FALSE}
+cols_for_behaviour = c("Open" = "olivedrab3", "Partial" = "forestgreen", "Closed" = "darkgreen")
+behaviour_data <- heat_data %>% 
+  group_by(Day, Treatment, Time_Block) %>% 
+  count(Open_Closed)
+
+behaviour_plot <- ggplot(data = behaviour_data, aes(x = Time_Block, y = n, fill = Open_Closed)) + 
+  geom_bar(alpha = 0.95, position="fill", stat="identity") +
+  facet_grid(. ~ Treatment,
+             labeller = labeller(Treatment = treatment_labels)) +
+  xlab("Time (hours)") +
+  ylab("Frequency") +
+  scale_fill_brewer(palette = "Greens") +
+  theme_cowplot(10)
+behaviour_plot <- behaviour_plot + labs(fill = "Behaviour Response")
+behaviour_plot
+
+ggsave(here("./images/behaviour_plot.png"), behaviour_plot, width = 10, height = 6)
+```
+
+Combining plots together for comparision:
+```{r}
+behaviour_heat <- behaviour_plot + heat_plot
+behaviour_heat <- behaviour_heat + plot_layout(ncol=2, widths = c(1.8,1))
+behaviour_heat <- behaviour_heat + plot_annotation(tag_levels = 'A')
+behaviour_heat
+
+ggsave(here("./images/behaviour_heat.png"), behaviour_heat, width = 10, height = 4)
+```
+
+
+
+
+

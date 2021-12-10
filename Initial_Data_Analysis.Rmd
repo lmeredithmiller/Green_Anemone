@@ -50,7 +50,7 @@ health_data <- health_data %>%
          Event_True = as.factor(Event_True)) %>% 
   filter(Species_ID != "G32B" & Species_ID != "G33B") %>% 
   mutate(Treatment = fct_relevel(Treatment, "Control", "25C", "30C"), 
-         Event = fct_relevel("Acclimation", "Pre-heat", "Post-heat", "Recovery"))
+         Event = fct_relevel("Acclimation", "Pre-heat", "Post-heat", "Recovery")) 
 cols_for_heat = c("25C" = "sienna2", "30C" = "brown3", "Control" = "azure4")
 ```
 
@@ -89,7 +89,7 @@ Dino_Threshold <- health_data %>%
   drop_na(Time_Point) %>% 
   filter(Dino_Density != 0)
 ```
-From the data above, we decide that the threshold for PAM will be 1000 cells per mg (symbiont density).
+
 
 #### Density Data
 The two datasets below are used in models for algae density and mitotic index of zoochlorellae and zooxanthellae. It filters out unwanted columns and drops NAs for Green_Density, Dino_Density, MI_Green and MI_Dino.
@@ -135,7 +135,7 @@ bartlett.test(Dino_Density ~ Treatment, Dino_Symbionts)      #p-value > 0.05, me
 ```
 
 Checking Distributions of Symbiont Data:
-We first test distributions learned in class to see if they fit those with the normal data. We repeat this for both Green and Dino density.
+Determining if the data fits other distributions. 
 
 ```{r, warning=FALSE, message=FALSE}
 #Greens
@@ -210,24 +210,31 @@ Delta_Data_model <- delta_data %>%
 
 Plots for symbiont data:
 ```{r, warning=FALSE, message=FALSE, out.length="50%"}
+treatment_labels = c("Control", "Mid heatwave", "Extreme heatwave")
+names(treatment_labels) = (c("Control", "25C", "30C"))
 green_plot <- ggplot(Green_Symbionts, aes(x = Date, y = log(Green_Density), fill = Treatment)) +
   geom_boxplot(alpha = 0.85) +
   xlab("Event") +
   ylab("Log-transformed ZC density (cells/mg)") +
-  facet_grid(. ~ Treatment) +
-  scale_color_manual(values = cols_for_heat) +
-  scale_fill_manual(values = cols_for_heat) +
+  facet_grid(. ~ Treatment, 
+             labeller = labeller(Treatment = treatment_labels)) +
+  scale_fill_manual(limits = c("Control", "25C", "30C"),
+                    labels = c("Control", "Mid heatwave", "Extreme heatwave"),
+                    values = cols_for_heat) +
   theme_test()
-green_plot <- green_plot + ylim(0,12) + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
-                              "11/13/2021" = "Recovery"))
+green_plot <- green_plot + ylim(0,12) + 
+  scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
+                              "11/13/2021" = "Recovery")) 
 
 dino_plot <- ggplot(Dino_Symbionts, aes(x = Date, y = log(Dino_Density), fill = Treatment)) +
   geom_boxplot(alpha = 0.85) +
   xlab("Event") +
-  ylab("Log-transformed ZX density (cells/mg)") +
-  facet_grid(. ~ Treatment) +
-  scale_color_manual(values = cols_for_heat) +
-  scale_fill_manual(values = cols_for_heat) +
+  ylab("Log-transformed S density (cells/mg)") +
+  facet_grid(. ~ Treatment,
+             labeller = labeller(Treatment = treatment_labels)) +
+  scale_fill_manual(limits = c("Control", "25C", "30C"),
+                    labels = c("Control", "Mid heatwave", "Extreme heatwave"),
+                    values = cols_for_heat) +
   theme_test()
 dino_plot <- dino_plot + ylim(0,12) + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
                               "11/13/2021" = "Recovery"))
@@ -394,9 +401,11 @@ green_MI_plot <- ggplot(Green_Symbionts, aes(x = Date, y = MI_Green, fill = Trea
   geom_boxplot(alpha = 0.85) +
   xlab("Event") +
   ylab("ZC Mitotic Index (%)") +
-  facet_grid(. ~ Treatment) +
-  scale_color_manual(values = cols_for_heat) +
-  scale_fill_manual(values = cols_for_heat) +
+  facet_grid(. ~ Treatment,
+             labeller = labeller(Treatment = treatment_labels)) +
+  scale_fill_manual(limits = c("Control", "25C", "30C"),
+                    labels = c("Control", "Mid heatwave", "Extreme heatwave"),
+                    values = cols_for_heat) +
   theme_test()
 green_MI_plot <- green_MI_plot + ylim(0,60) + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
                               "11/13/2021" = "Recovery"))
@@ -404,10 +413,12 @@ green_MI_plot <- green_MI_plot + ylim(0,60) + scale_x_discrete(labels=c("11/5/20
 dino_MI_plot <- ggplot(Dino_Symbionts, aes(x = Date, y = MI_Dino, fill = Treatment)) +
   geom_boxplot(alpha = 0.85) +
   xlab("Event") +
-  ylab("ZX Mitotic Index (%)") +
-  facet_grid(. ~ Treatment) +
-  scale_color_manual(values = cols_for_heat) +
-  scale_fill_manual(values = cols_for_heat) +
+  ylab("S Mitotic Index (%)") +
+  facet_grid(. ~ Treatment,
+             labeller = labeller(Treatment = treatment_labels)) +
+  scale_fill_manual(limits = c("Control", "25C", "30C"),
+                    labels = c("Control", "Mid heatwave", "Extreme heatwave"),
+                    values = cols_for_heat) +
   theme_test()
 dino_MI_plot <- dino_MI_plot + ylim(0,30) + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat",
                               "11/13/2021" = "Recovery"))
@@ -564,15 +575,16 @@ Findings:
 **PAM graphs**
 ```{r}
 PAM_over_time <- ggplot(data = filtered_PAM_data, aes(x=Date, y = Mean_PAM, colour = Treatment, group = Treatment)) +
-  theme_test() +
   geom_point(position = position_dodge(width = 0.1)) +
   geom_linerange(aes(ymin = Mean_PAM - SE_PAM, 
                      ymax = Mean_PAM + SE_PAM), position = position_dodge(width = 0.1)) +
   geom_line(position = position_dodge(width = 0.1)) +
   labs(x="Event", 
        y = "Average Photosynthetic Efficiency (Fv/Fm)") +
-  scale_fill_manual(values = cols_for_heat) +
-  scale_colour_manual(values = cols_for_heat)
+  scale_colour_manual(limits = c("Control", "25C", "30C"),
+                    labels = c("Control", "Mid heatwave", "Extreme heatwave"),
+                    values = cols_for_heat) +
+  theme_test()
 PAM_over_time <- PAM_over_time + scale_x_discrete(labels=c("11/6/2021" = "Pre-heat", "11/9/2021" = "Post-heat", "11/13/2021" = "Recovery"))
 PAM_over_time
 
@@ -643,20 +655,20 @@ ggplot(Size_Data, aes(x = Date, y = Base_Diameter_mm)) +
 
 ```{r}
 size_plot <- ggplot(data = Size_Data, aes(x=Date, y = Mean_Size, colour = Treatment, group = Treatment)) +
-  theme_test() +
   geom_point(position = position_dodge(width = 0.1)) +
-  geom_linerange(aes(ymin = Mean_Size - SE_Size, ymax = Mean_Size + SE_Size), position = position_dodge(width = 0.1)) +
+  geom_linerange(qaes(ymin = Mean_Size - SE_Size, ymax = Mean_Size + SE_Size), position = position_dodge(width = 0.1)) +
   geom_line(position = position_dodge(width = 0.1)) +
   labs(x="Event", 
        y = "Average Base Diameter (mm)") +
-  scale_fill_manual(values = cols_for_heat) +
-  scale_colour_manual(values = cols_for_heat)
+  scale_colour_manual(limits = c("Control", "25C", "30C"),
+                    labels = c("Control", "Mid heatwave", "Extreme heatwave"),
+                    values = cols_for_heat) +
+  theme_test()
 size_plot <- size_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat", "11/13/2021" = "Recovery"))
 size_plot
 
 ggsave(here("./images/size_plot.png"), size_plot)
 ```
-
 
 ### Feeding Data
 ```{r, warning=FALSE, message=FALSE}
@@ -698,7 +710,6 @@ Feeding_Data$orderTreatment = ordered(Feeding_Data$Treatment, levels = c("Contro
 
 Feeding_lNorm_model <- gamlss(formula = Feeding_Time_Min ~ Date*Treatment + random(Species_ID) + random(Field_Site) + random(Acclimation_Period), family = LOGNO(), data = Feeding_Data, control = gamlss.control(n.cyc = 3))
 summary(Feeding_lNorm_model)
-
 ```
 
 ```{r}
@@ -719,8 +730,9 @@ feeding_plot <- ggplot(Feeding_Data, aes(x = Date, y = Feeding_Time_Min, fill = 
   geom_boxplot(alpha=0.85) +
   xlab("Event") +
   ylab("Feeding Time (minutes)") +
-  scale_color_manual(values = cols_for_heat) +
-  scale_fill_manual(values = cols_for_heat) +
+  scale_fill_manual(limits = c("Control", "25C", "30C"),
+                    labels = c("Control", "Mid heatwave", "Extreme heatwave"),
+                    values = cols_for_heat) +
   theme_test()
 feeding_plot <- feeding_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat"))
 feeding_plot
@@ -747,10 +759,15 @@ heat_plot <- ggplot(data = heat_data, aes(x = Time_Block, y = Temp_avg, color = 
   geom_line(alpha = 1.5) +
   xlab("Time (hours)") +
   ylab("Temperature (°C)") +
-  scale_color_manual(values = cols_for_heat) +
-  scale_fill_manual(values = cols_for_heat) +
-  theme_test()
+  scale_colour_manual(limits = c("Control", "25C", "30C"),
+                    labels = c("Control", "Mid heatwave", "Extreme heatwave"),
+                    values = cols_for_heat) +
+  theme(axis.title.x = element_text(size=10),
+        axis.title.y = element_text(size=10)) +
+  theme_test() 
+heat_plot <- heat_plot + theme(legend.key.size = unit(0.75, 'lines'))
 heat_plot
+
 ggsave(here("./images/heat_plot.png"), heat_plot)
 ```
 
@@ -762,18 +779,19 @@ summary(ord_model)
 
 **Open/Closed Graph**
 ```{r, warning=FALSE, message=FALSE}
-cols_for_behaviour = c("Open" = "bisque1", "Partial" = "brown2", "Closed" = "darkred")
+cols_for_behaviour = c("Open" = "olivedrab3", "Partial" = "forestgreen", "Closed" = "darkgreen")
 behaviour_data <- heat_data %>% 
   group_by(Day, Treatment, Time_Block) %>% 
   count(Open_Closed)
 
 behaviour_plot <- ggplot(data = behaviour_data, aes(x = Time_Block, y = n, fill = Open_Closed)) + 
-  geom_bar(position="fill", stat="identity") +
-  facet_grid(. ~ Treatment) +
+  geom_bar(alpha = 0.95, position="fill", stat="identity") +
+  facet_grid(. ~ Treatment,
+             labeller = labeller(Treatment = treatment_labels)) +
   xlab("Time (hours)") +
   ylab("Frequency") +
-  scale_fill_brewer(palette = "Reds") +
-  theme_cowplot()
+  scale_fill_brewer(palette = "Greens") +
+  theme_cowplot(10)
 behaviour_plot <- behaviour_plot + labs(fill = "Behaviour Response")
 behaviour_plot
 
@@ -782,7 +800,8 @@ ggsave(here("./images/behaviour_plot.png"), behaviour_plot, width = 10, height =
 
 ```{r}
 behaviour_heat <- behaviour_plot + heat_plot
-behaviour_heat <- behaviour_heat + plot_layout(ncol=2)
+behaviour_heat <- behaviour_heat + plot_layout(ncol=2, widths = c(1.8,1))
+behaviour_heat <- behaviour_heat + plot_annotation(tag_levels = 'A')
 behaviour_heat
 
 ggsave(here("./images/behaviour_heat.png"), behaviour_heat, width = 10, height = 4)
