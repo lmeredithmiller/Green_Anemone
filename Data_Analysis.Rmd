@@ -124,6 +124,14 @@ Dino_Symbionts <- health_data %>%
   mutate(Acclimation_Period = as.factor(Acclimation_Period))
 ```
 
+```{r}
+kruskal.test(Green_Density ~ Treatment, data = Green_Symbionts) # p = 0.003
+dunnTest(Green_Density ~ Treatment, data = Green_Symbionts) # sig. difference between 25-30 and 30-control
+
+kruskal.test(Dino_Density ~ Treatment, data = Dino_Symbionts) # not significant 
+dunnTest(Dino_Density ~ Treatment, data = Dino_Symbionts) # not significant 
+```
+
 **Checking Normality and Equal Variance:**
 ```{r, warning=FALSE, message=FALSE}
 # Green
@@ -163,6 +171,16 @@ Dino_Gamma <- histDist(Dino_Symbionts$Dino_Density, "GA",
                        density = F, main = "Gamma")
 ```
 
+**Dunn and Kruskal Wallis Test on Density Data:**
+Used for box blot
+```{r}
+kruskal.test(Green_Density ~ Treatment, data = Green_Symbionts) # p = 0.004
+dunnTest(Green_Density ~ Treatment, data = Green_Symbionts) # sig. difference between 25-30 and between 30 anc control
+
+kruskal.test(Dino_Density ~ Treatment, data = Dino_Symbionts) # not significant 
+dunnTest(Dino_Density ~ Treatment, data = Dino_Symbionts) # not significant 
+```
+
 **Running Models on Symbiont Data:**
 We chose to use our Weibull distribution for green density and Gamma distribution for dino density. Here we run our models.
 ```{r, warning=FALSE, message=FALSE}
@@ -190,6 +208,32 @@ Dino_Gamma_model <- gamlss(formula = Dino_Density ~ Date*Treatment +
 
 summary(Dino_Gamma_model) # significance in both the 25 and 30 degree treatment
 ```
+
+**Figure 1**: ZC symbiont density, using gamlss with Weibull distribution. Significance compared to pre-heat of control.
+
+| Interaction [ask sara] | Standard Error | t-value | p-value |
+| ----------------- | -------- | -------- | -------- |
+| Post-heat | 0.27804 | -0.630 | 0.5354 |
+| Recovery | 0.28856 | 1.001 | 0.3283 |
+| Mid heatwave | 0.32291 | -0.376 | 0.7106 |
+| Extreme heatwave | 0.26344 | 5.600 | < 0.001 |
+| Post-heat : Mid heatwave | 0.45057 | 0.113 | 0.9109 |
+| Post-heat : Extreme heatwave | 0.44295 | -1.883 | 0.0738 |
+| Recovery : Mid heatwave | 0.38302 | 0.353 | 0.7275 |
+| Recovery : Extreme heatwave | 0.38314 | 0.852 | 0.4037 |
+
+**Figure 2**: ZX symbiont density, using gamlss with Gamma distribution. Significance compared to pre-heat of control.
+
+| Interaction [ask sara] | Standard Error | t-value | p-value |
+| ----------------- | -------- | -------- | -------- |
+| Post-heat | 0.34106 | -0.496 | 0.62449 |
+| Recovery | 0.35394 | -0.663 | 0.51405 | 
+| Mid heatwave | 0.39574 | -3.350 | 0.00291 |
+| Extreme heatwave | 0.32308 | -2.305 | 0.03104 |
+| Post-heat : Mid heatwave | 0.55161 |  0.788 | 0.43886 |  
+| Post-heat : Extreme heatwave | 0.54261 | 1.914 | 0.06874 |
+| Recovery : Mid heatwave | 0.46976 | -0.497 | 0.62435 |  
+| Recovery : Extreme heatwave | 0.46977 |  0.084 | 0.93399 |
 
 **Plots for symbiont data:**
 ```{r, warning=FALSE, message=FALSE}
@@ -406,6 +450,7 @@ bartlett.test(Base_Diameter_mm ~ Treatment, data = Size_Data)
 ```
 
 The distributions do not meet assumptions of normality but does meet the assumption of equal variance. 
+
 
 **Checking Distributions of Symbiont Data:**
 Determining if the data fits other distributions. 
