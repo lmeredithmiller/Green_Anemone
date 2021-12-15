@@ -2,12 +2,7 @@
 title: "Data Analysis"
 author: "Joan Moreaux and Meredith Miller"
 date: "22/11/2021"
-output:
-  pdf_document:
-    includes:
-      in_header: file.tex
-  html_document:
-    df_print: paged
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -236,6 +231,7 @@ dunnTest(Dino_Density ~ Treatment, data = Dino_Symbionts) # not significant
 ```
 
 **Plots for symbiont data:**
+Box plot with event on the x axis and logged symbiont density on the y axis, separated by treatment.
 ```{r, warning=FALSE, message=FALSE}
 
 treatment_labels = c("Control", "Mid heatwave", "Extreme heatwave")
@@ -323,6 +319,7 @@ dunnTest(MI_Dino ~ Treatment, data = MI_Data) # not significant
 ```
 
 **Plot for MI data:**
+Box plot with event on the x axis and mitotic index on the y axis, separated by treatment.
 ```{r, warning=FALSE, message=FALSE}
 green_MI_plot <- ggplot(Green_Symbionts, aes(x = Date, y = MI_Green, 
                                              fill = Treatment)) +
@@ -402,6 +399,7 @@ dunnTest(PAM_avg ~ Treatment, data = filtered_PAM_data)
 ```
 
 **Plot for PAM:**
+Line plot with event on the x axis and average (+/- standard error) PAM measurements on the y axis, colour indicate treatments.
 ```{r, warning=FALSE, message=FALSE}
 PAM_over_time <- ggplot(data = filtered_PAM_data, aes(x=Date, y = Mean_PAM, 
                                                       colour = Treatment, 
@@ -476,7 +474,7 @@ Feeding_Gamma <- histDist(Size_Data$Base_Diameter_mm, "GA", density = F, main = 
 **Running Models:**
 We are going to run a lNorm model on our size data because the p value is larger and AIC value is smaller. 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 Size_Data$orderTreatment = ordered(Size_Data$Treatment, levels = c("Control", "25C", "30C"))
 
 Size_lNorm_model <- gamlss(formula = Base_Diameter_mm ~ Date*Treatment + 
@@ -489,7 +487,7 @@ Size_lNorm_model <- gamlss(formula = Base_Diameter_mm ~ Date*Treatment +
 
 The control and 25 did have significant values, but the 30 did not. 
 
-**Figure 3**: Size data, using gamlss with Log Normal distribution. Significance compared to pre-heat of control.
+**Table 3**: Size data, using gamlss with Log Normal distribution. Significance compared to pre-heat of control.
 
 | Model Terms | Estimate | Standard Error | t-value | p-value |
 | ----------------- | -------- | -------- | -------- | -------- |
@@ -504,7 +502,8 @@ The control and 25 did have significant values, but the 30 did not.
 | Recovery : Extreme heatwave | -0.05528 | 0.03756 | -1.472 | 0.1462 | 
 
 **Plot for Size:**
-```{r}
+Line plot with event on the x axis and average (+/- standard error) base size measurements on the y axis, colour indicate treatments.
+```{r, warning=FALSE, message=FALSE}
 size_plot <- ggplot(data = Size_Data, aes(x=Date, y = Mean_Size, 
                                           colour = Treatment, group = Treatment)) +
   geom_point(position = position_dodge(width = 0.1)) +
@@ -596,6 +595,7 @@ summary(Feeding_lNorm_model) # significance is only in post-heat 30C
 | Post-heat : Extreme heatwave  | 2.3532  | 0.9970  | 2.360  | 0.0453 |
 
 **Plot for Feeding:**
+Box plot with event on the x axis and feeding time on the y axix, colours represent different treatments.
 ```{r, warning=FALSE, message=FALSE}
 feeding_plot <- ggplot(Feeding_Data, aes(x = Date, y = Feeding_Time_Min, fill = Treatment)) +
   geom_boxplot(alpha=0.85) +
@@ -605,7 +605,8 @@ feeding_plot <- ggplot(Feeding_Data, aes(x = Date, y = Feeding_Time_Min, fill = 
                     labels = c("Control", "Mid heatwave", "Extreme heatwave"),
                     values = cols_for_heat) +
   theme_test()
-feeding_plot <- feeding_plot + scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat"))
+feeding_plot <- feeding_plot + 
+  scale_x_discrete(labels=c("11/5/2021" = "Pre-heat", "11/9/2021" = "Post-heat"))
 feeding_plot
 ggsave(here("./images/feeding_plot.png"), feeding_plot)
 ```
@@ -624,6 +625,7 @@ heat_data <- heat_data %>%
 ```
 
 **Temperature over Time Graph:**
+Line plot with time in hours on the x axis and temperature on the y axis, colours represent different treatments. 
 ```{r, warning=FALSE, message=FALSE}
 heat_plot <- ggplot(data = heat_data, aes(x = Time_Block, y = Temp_avg, color = Treatment)) +
   geom_point(size = 1) +
@@ -651,8 +653,8 @@ summary(ord_model) # significance in both treatments
 ```
 
 **Open/Closed Graph:**
+Stacked bar plot with time in hours during heatwave on the x axis and frequency count on the y axis> The 3 bar plots are separated by treatment and the colours indicate different behaviours. 
 ```{r, warning=FALSE, message=FALSE}
-cols_for_behaviour = c("Open" = "olivedrab3", "Partial" = "forestgreen", "Closed" = "darkgreen")
 behaviour_data <- heat_data %>% 
   group_by(Day, Treatment, Time_Block) %>% 
   count(Open_Closed)
