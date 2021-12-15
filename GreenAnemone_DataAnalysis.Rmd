@@ -15,15 +15,10 @@ knitr::opts_chunk$set(echo = TRUE, tidy=TRUE, tidy.opts = list(width.cutoff = 80
 ## Loading library and data
 
 ```{r, warning=FALSE, message=FALSE}
-library(performance)
-library(DHARMa)
-library(mgcv)
 library(fitdistrplus)
 library(goft)
 library(gamlss)
 library(FSA) 
-library(fGarch)
-library(LambertW)
 library(ordinal)
 library(cowplot)
 library(here)
