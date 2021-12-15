@@ -2,7 +2,12 @@
 title: "Data Analysis"
 author: "Joan Moreaux and Meredith Miller"
 date: "22/11/2021"
-output: pdf_document
+output:
+  pdf_document:
+    includes:
+      in_header: file.tex
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -124,14 +129,6 @@ Dino_Symbionts <- health_data %>%
   mutate(Acclimation_Period = as.factor(Acclimation_Period))
 ```
 
-```{r}
-kruskal.test(Green_Density ~ Treatment, data = Green_Symbionts) # p = 0.003
-dunnTest(Green_Density ~ Treatment, data = Green_Symbionts) # sig. difference between 25-30 and 30-control
-
-kruskal.test(Dino_Density ~ Treatment, data = Dino_Symbionts) # not significant 
-dunnTest(Dino_Density ~ Treatment, data = Dino_Symbionts) # not significant 
-```
-
 **Checking Normality and Equal Variance:**
 ```{r, warning=FALSE, message=FALSE}
 # Green
@@ -147,7 +144,7 @@ All p-values are <0.05 and therefore the distributions do not meet assumptions o
 
 **Checking Distributions of Symbiont Data:** Determining if the data fits other distributions. 
 
-```{r, warning=FALSE, message=FALSE}
+```{r, out.width = "70%", out.height = "57%", warning=FALSE, message=FALSE}
 #Greens
 exp_test(Green_Symbionts$Green_Density)         #p-value < 0.05
 gamma_test(Green_Symbionts$Green_Density)       #p = 0.123
@@ -169,16 +166,6 @@ weibull_test(Dino_Symbionts$Dino_Density)       #p = 0.774
 #Use Gamma since p value is larger than weibull
 Dino_Gamma <- histDist(Dino_Symbionts$Dino_Density, "GA", 
                        density = F, main = "Gamma")
-```
-
-**Dunn and Kruskal Wallis Test on Density Data:**
-Used for box blot
-```{r}
-kruskal.test(Green_Density ~ Treatment, data = Green_Symbionts) # p = 0.004
-dunnTest(Green_Density ~ Treatment, data = Green_Symbionts) # sig. difference between 25-30 and between 30 anc control
-
-kruskal.test(Dino_Density ~ Treatment, data = Dino_Symbionts) # not significant 
-dunnTest(Dino_Density ~ Treatment, data = Dino_Symbionts) # not significant 
 ```
 
 **Running Models on Symbiont Data:**
@@ -209,34 +196,48 @@ Dino_Gamma_model <- gamlss(formula = Dino_Density ~ Date*Treatment +
 summary(Dino_Gamma_model) # significance in both the 25 and 30 degree treatment
 ```
 
-**Figure 1**: ZC symbiont density, using gamlss with Weibull distribution. Significance compared to pre-heat of control.
+**Table 1**: ZC symbiont density, using gamlss with Weibull distribution. Significance compared to pre-heat of control.
 
-| Interaction [ask sara] | Standard Error | t-value | p-value |
-| ----------------- | -------- | -------- | -------- |
-| Post-heat | 0.27804 | -0.630 | 0.5354 |
-| Recovery | 0.28856 | 1.001 | 0.3283 |
-| Mid heatwave | 0.32291 | -0.376 | 0.7106 |
-| Extreme heatwave | 0.26344 | 5.600 | < 0.001 |
-| Post-heat : Mid heatwave | 0.45057 | 0.113 | 0.9109 |
-| Post-heat : Extreme heatwave | 0.44295 | -1.883 | 0.0738 |
-| Recovery : Mid heatwave | 0.38302 | 0.353 | 0.7275 |
-| Recovery : Extreme heatwave | 0.38314 | 0.852 | 0.4037 |
+| Model Terms | Estimate | Standard Error | t-value | p-value |
+| ----------------- | -------- | -------- | -------- | -------- |
+| [Intercept] | 7.02648  |  0.20520 | 34.242 | < 0.01 |
+| Post-heat | -0.17523  |  0.27804 | -0.630 | 0.5354 | 
+| Recovery | 0.28886  |  0.28856  | 1.001 |  0.3283 |   
+| Mid heatwave | -0.12147  |  0.32291 | -0.376 | 0.7106 |  
+| Extreme heatwave | 1.47524  |  0.26344  | 5.600 | < 0.01 |
+| Post-heat : Mid heatwave | 0.05102  |  0.45057  | 0.113 |  0.9109 |   
+| Post-heat : Extreme heatwave |-0.83396  |  0.44295 | -1.883 |  0.0738 |  
+| Recovery : Mid heatwave | 0.13530  |  0.38302 |  0.353 |  0.7275 | 
+| Recovery : Extreme heatwave  | 0.32660  |  0.38314  | 0.852  | 0.4037 | 
 
-**Figure 2**: ZX symbiont density, using gamlss with Gamma distribution. Significance compared to pre-heat of control.
+**Table 2**: ZX symbiont density, using gamlss with Gamma distribution. Significance compared to pre-heat of control.
 
-| Interaction [ask sara] | Standard Error | t-value | p-value |
-| ----------------- | -------- | -------- | -------- |
-| Post-heat | 0.34106 | -0.496 | 0.62449 |
-| Recovery | 0.35394 | -0.663 | 0.51405 | 
-| Mid heatwave | 0.39574 | -3.350 | 0.00291 |
-| Extreme heatwave | 0.32308 | -2.305 | 0.03104 |
-| Post-heat : Mid heatwave | 0.55161 |  0.788 | 0.43886 |  
-| Post-heat : Extreme heatwave | 0.54261 | 1.914 | 0.06874 |
-| Recovery : Mid heatwave | 0.46976 | -0.497 | 0.62435 |  
-| Recovery : Extreme heatwave | 0.46977 |  0.084 | 0.93399 |
+| Model Terms | Estimate | Standard Error | t-value | p-value |
+| ----------------- | -------- | -------- | -------- | -------- |
+| [Intercept] | 8.06079  |  0.25027 | 32.208 | < 0.01 |
+| Post-heat | -0.16934  |  0.34106 | -0.496 | 0.6245 |    
+| Recovery | -0.23477  |  0.35394 | -0.663 | 0.5141 |   
+| Mid heatwave | -1.32556  |  0.39574 | -3.350 | 0.0029 |
+| Extreme heatwave | -0.74465  |  0.32308 | -2.305 | 0.0310 |
+| Post-heat : Mid heatwave | 0.43494  |  0.55161  | 0.788 |  0.4389 |   
+| Post-heat : Extreme heatwave | 1.03874  |  0.54261 | 1.914 | 0.0687 |  
+| Recovery : Mid heatwave | -0.23333 | 0.46976 | -0.497 | 0.6244 |    
+| Recovery : Extreme heatwave | 0.03936 | 0.46977 | 0.084 | 0.9340 |    
+
+**Dunn and Kruskal Wallis Test on Density Data:**
+Used for box blot
+```{r}
+kruskal.test(Green_Density ~ Treatment, data = Green_Symbionts) # p = 0.004
+dunnTest(Green_Density ~ Treatment, data = Green_Symbionts) 
+# sig. difference between 25-30 and between 30-control
+
+kruskal.test(Dino_Density ~ Treatment, data = Dino_Symbionts) # not significant 
+dunnTest(Dino_Density ~ Treatment, data = Dino_Symbionts) # not significant 
+```
 
 **Plots for symbiont data:**
 ```{r, warning=FALSE, message=FALSE}
+
 treatment_labels = c("Control", "Mid heatwave", "Extreme heatwave")
 names(treatment_labels) = (c("Control", "25C", "30C"))
 green_plot <- ggplot(Green_Symbionts, aes(x = Date, y = log(Green_Density), 
@@ -455,7 +456,7 @@ The distributions do not meet assumptions of normality but does meet the assumpt
 **Checking Distributions of Symbiont Data:**
 Determining if the data fits other distributions. 
 
-```{r, warning=FALSE, message=FALSE}
+```{r, out.width = "70%", out.height = "57%", warning=FALSE, message=FALSE}
 exp_test(Size_Data$Base_Diameter_mm)            #p-value < 0.05
 gamma_test(Size_Data$Base_Diameter_mm)          #p = 0.1874
 lnorm_test(Size_Data$Base_Diameter_mm)          #p = 0.4117
@@ -483,10 +484,24 @@ Size_lNorm_model <- gamlss(formula = Base_Diameter_mm ~ Date*Treatment +
                              random(Acclimation_Period), 
                            family = LOGNO(), data = Size_Data, 
                            control = gamlss.control(n.cyc = 4))
-summary(Size_lNorm_model) # significant in 30
+ summary(Size_lNorm_model) # significant in 30
 ```
 
 The control and 25 did have significant values, but the 30 did not. 
+
+**Figure 3**: Size data, using gamlss with Log Normal distribution. Significance compared to pre-heat of control.
+
+| Model Terms | Estimate | Standard Error | t-value | p-value |
+| ----------------- | -------- | -------- | -------- | -------- |
+| [Intercept] | 3.89112 | 0.01940 | 200.618 | < 0.01 |
+| Post-heat | 0.03437 |  0.02685  | 1.280 | 0.2053 |   
+| Recovery | 0.09388 |  0.02685  | 3.496 | < 0.01 |
+| Mid heatwave | 0.03913  | 0.02685  | 1.457 | 0.1501 |    
+| Extreme heatwave | 0.10920  | 0.02685  | 4.067 | < 0.01 |
+| Post-heat : Mid heatwave |  0.03822 |  0.03756 |  1.018 | 0.3129 |    
+| Post-heat : Extreme heatwave | -0.09243  | 0.03756 |  -2.461 | 0.0167 |  
+| Recovery : Mid heatwave | -0.00411 | 0.03756 | -0.109 | 0.9133 |   
+| Recovery : Extreme heatwave | -0.05528 | 0.03756 | -1.472 | 0.1462 | 
 
 **Plot for Size:**
 ```{r}
@@ -539,7 +554,7 @@ Distribution is not normal but meets the assumption of equal variance. We will c
 **Checking Distributions:**
 Determining if the data fits other distributions. 
 
-```{r, warning=FALSE, message=FALSE}
+```{r, out.width = "70%", out.height = "57%", warning=FALSE, message=FALSE}
 exp_test(Feeding_Data$Feeding_Time_Min)            #p-value < 0.05
 gamma_test(Feeding_Data$Feeding_Time_Min)          #p = 0.3717
 lnorm_test(Feeding_Data$Feeding_Time_Min)          #p = 0.6937
@@ -568,6 +583,17 @@ Feeding_lNorm_model <- gamlss(formula = Feeding_Time_Min ~ Date*Treatment +
                               control = gamlss.control(n.cyc = 3))
 summary(Feeding_lNorm_model) # significance is only in post-heat 30C
 ```
+
+**Figure 4**: Feeding data, using gamlss with Log Normal distribution. Significance compared to pre-heat of control.
+
+| Model Terms | Estimate | Standard Error | t-value | p-value |
+| ----------------- | -------- | -------- | -------- | -------- |
+| [Intercept] | -0.5298 | 0.5149 | -1.029  | 0.3330 |
+| Post-heat | 0.2449 | 0.7281 | -0.336 |  0.7451 |
+| Mid heatwave | 0.8233 | 0.8141 |  1.011 |  0.3409 |
+| Extreme heatwave | 0.3369 | 0.7281  | 0.463 |  0.6557  |
+| Post-heat : Mid heatwave | 1.9684  |   1.1513 | 1.710 | 0.1249 |
+| Post-heat : Extreme heatwave  | 2.3532  | 0.9970  | 2.360  | 0.0453 |
 
 **Plot for Feeding:**
 ```{r, warning=FALSE, message=FALSE}
