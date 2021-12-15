@@ -1,4 +1,4 @@
-# Green_Anemone
+# Green Anemone
 
 Authors: 
 
