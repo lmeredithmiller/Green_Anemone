@@ -2,7 +2,9 @@
 title: "Data Analysis"
 author: "Joan Moreaux and Meredith Miller"
 date: "22/11/2021"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -30,8 +32,8 @@ library(tidyverse)
 ```
 
 ```{r, warning=FALSE, message=FALSE}
-health_data <- read.csv("Big_Data_Green.csv")
-heat_data <- read.csv("Heat_Data.csv")
+health_data <- read.csv(here("./data/Big_Data_Green.csv"))
+heat_data <- read.csv(here("./data/Heat_Data.csv"))
 ```
 
 ## Health Data
@@ -125,6 +127,7 @@ Dino_Symbionts <- health_data %>%
 ```
 
 **Checking Normality and Equal Variance:**
+
 ```{r, warning=FALSE, message=FALSE}
 # Green
 shapiro.test(Green_Symbionts$Green_Density)      
@@ -165,6 +168,7 @@ Dino_Gamma <- histDist(Dino_Symbionts$Dino_Density, "GA",
 
 **Running Models on Symbiont Data:**
 We chose to use our Weibull distribution for green density and Gamma distribution for dino density. Here we run our models.
+
 ```{r, warning=FALSE, message=FALSE}
 #Green
 Green_Symbionts$orderTreatment = ordered(Green_Symbionts$Treatment, 
@@ -221,6 +225,7 @@ summary(Dino_Gamma_model) # significance in both the 25 and 30 degree treatment
 
 **Dunn and Kruskal Wallis Test on Density Data:**
 Used for box blot
+
 ```{r}
 kruskal.test(Green_Density ~ Treatment, data = Green_Symbionts) # p = 0.004
 dunnTest(Green_Density ~ Treatment, data = Green_Symbionts) 
@@ -232,6 +237,7 @@ dunnTest(Dino_Density ~ Treatment, data = Dino_Symbionts) # not significant
 
 **Plots for symbiont data:**
 Box plot with event on the x axis and logged symbiont density on the y axis, separated by treatment.
+
 ```{r, warning=FALSE, message=FALSE}
 
 treatment_labels = c("Control", "Mid heatwave", "Extreme heatwave")
@@ -297,6 +303,7 @@ MI_Data <- health_data %>%
 ```
 
 **Checking Normality and Equal Variance:**
+
 ```{r, warning=FALSE, message=FALSE}
 #Green
 shapiro.test(MI_Data$Green_Density)      
@@ -310,6 +317,7 @@ bartlett.test(Dino_Density ~ Treatment, MI_Data) # p-value = 0.1483
 ZC (green) symbiont density does not meet assumptions of normality or equal variance, while ZC (dino) does not meet assumption of normality but meets the assumption of equal variance. We will run Dunn and Kruskal Wallis tests on the MI data to test for significant differences.
 
 **Dunn and Kruskal Wallis Test on MI Data:**
+
 ```{r}
 kruskal.test(MI_Green ~ Treatment, data = MI_Data) # p = 0.009
 dunnTest(MI_Green ~ Treatment, data = MI_Data) # sig. difference between 25-30
@@ -320,6 +328,7 @@ dunnTest(MI_Dino ~ Treatment, data = MI_Data) # not significant
 
 **Plot for MI data:**
 Box plot with event on the x axis and mitotic index on the y axis, separated by treatment.
+
 ```{r, warning=FALSE, message=FALSE}
 green_MI_plot <- ggplot(Green_Symbionts, aes(x = Date, y = MI_Green, 
                                              fill = Treatment)) +
@@ -360,6 +369,7 @@ ggsave(here("./images/MI_plot.png"), MI_plot, width = 10, height = 9)
 
 ### PAM data
 We filter out aposymbiotic anemones. 
+
 ```{r, warning=FALSE, message=FALSE}
 # Organizing the data 
 PAM_individuals <- health_data %>% 
@@ -385,6 +395,7 @@ filtered_PAM_data = PAM_individuals %>%
 ```
 
 **Checking Normality and Equal Variance:**
+
 ```{r, warning=FALSE, message=FALSE}
 shapiro.test(filtered_PAM_data$PAM_avg) 
 bartlett.test(PAM_avg ~ Treatment, data = filtered_PAM_data) 
@@ -400,6 +411,7 @@ dunnTest(PAM_avg ~ Treatment, data = filtered_PAM_data)
 
 **Plot for PAM:**
 Line plot with event on the x axis and average (+/- standard error) PAM measurements on the y axis, colour indicate treatments.
+
 ```{r, warning=FALSE, message=FALSE}
 PAM_over_time <- ggplot(data = filtered_PAM_data, aes(x=Date, y = Mean_PAM, 
                                                       colour = Treatment, 
@@ -408,7 +420,7 @@ PAM_over_time <- ggplot(data = filtered_PAM_data, aes(x=Date, y = Mean_PAM,
   geom_linerange(aes(ymin = Mean_PAM - SE_PAM, 
                      ymax = Mean_PAM + SE_PAM), position = position_dodge(width = 0.1)) +
   geom_line(position = position_dodge(width = 0.1)) +
-  labs(x="Event", 
+  labs(x="Event",
        y = "Average Photosynthetic Efficiency (Fv/Fm)") +
   scale_colour_manual(limits = c("Control", "25C", "30C"),
                     labels = c("Control", "Mid heatwave", "Extreme heatwave"),
@@ -443,13 +455,13 @@ Size_Data <- health_data %>%
 ```
 
 **Checking for Normality and Equal Variance:**
+
 ```{r, warning=FALSE, message=FALSE}
 shapiro.test(Size_Data$Base_Diameter_mm)
 bartlett.test(Base_Diameter_mm ~ Treatment, data = Size_Data)
 ```
 
 The distributions do not meet assumptions of normality but does meet the assumption of equal variance. 
-
 
 **Checking Distributions of Symbiont Data:**
 Determining if the data fits other distributions. 
@@ -503,6 +515,7 @@ The control and 25 did have significant values, but the 30 did not.
 
 **Plot for Size:**
 Line plot with event on the x axis and average (+/- standard error) base size measurements on the y axis, colour indicate treatments.
+
 ```{r, warning=FALSE, message=FALSE}
 size_plot <- ggplot(data = Size_Data, aes(x=Date, y = Mean_Size, 
                                           colour = Treatment, group = Treatment)) +
@@ -543,6 +556,7 @@ Feeding_Data <- health_data %>%
 ```
 
 **Checking for Normality and Equal Variance:**
+
 ```{r, warning=FALSE, message=FALSE}
 shapiro.test(Feeding_Data$Feeding_Time_Min)   
 bartlett.test(Feeding_Time_Min ~ Treatment, data = Feeding_Data)
@@ -571,6 +585,7 @@ Green_Weibull <- histDist(Feeding_Data$Feeding_Time_Min, "WEI",
 
 **Running model:**
 We are going to use the lnorm distribution because the p value is larger and AIC value is smaller.
+
 ```{r, warning=FALSE, message=FALSE}
 Feeding_Data$orderTreatment = ordered(Feeding_Data$Treatment, 
                                       levels = c("Control", "25C", "30C"))
@@ -583,7 +598,7 @@ Feeding_lNorm_model <- gamlss(formula = Feeding_Time_Min ~ Date*Treatment +
 summary(Feeding_lNorm_model) # significance is only in post-heat 30C
 ```
 
-**Figure 4**: Feeding data, using gamlss with Log Normal distribution. Significance compared to pre-heat of control.
+**Table 4**: Feeding data, using gamlss with Log Normal distribution. Significance compared to pre-heat of control.
 
 | Model Terms | Estimate | Standard Error | t-value | p-value |
 | ----------------- | -------- | -------- | -------- | -------- |
@@ -596,6 +611,7 @@ summary(Feeding_lNorm_model) # significance is only in post-heat 30C
 
 **Plot for Feeding:**
 Box plot with event on the x axis and feeding time on the y axix, colours represent different treatments.
+
 ```{r, warning=FALSE, message=FALSE}
 feeding_plot <- ggplot(Feeding_Data, aes(x = Date, y = Feeding_Time_Min, fill = Treatment)) +
   geom_boxplot(alpha=0.85) +
@@ -626,6 +642,7 @@ heat_data <- heat_data %>%
 
 **Temperature over Time Graph:**
 Line plot with time in hours on the x axis and temperature on the y axis, colours represent different treatments. 
+
 ```{r, warning=FALSE, message=FALSE}
 heat_plot <- ggplot(data = heat_data, aes(x = Time_Block, y = Temp_avg, color = Treatment)) +
   geom_point(size = 1) +
@@ -646,6 +663,7 @@ ggsave(here("./images/heat_plot.png"), heat_plot)
 
 ### Ordinal Regression
 Model to test significance on the open/partial/closed data. 
+
 ```{r}
 ord_model = clmm(Open_Closed ~ Treatment + (1 | Bucket) + (1 | Species_ID), 
                  data = heat_data)
@@ -654,6 +672,7 @@ summary(ord_model) # significance in both treatments
 
 **Open/Closed Graph:**
 Stacked bar plot with time in hours during heatwave on the x axis and frequency count on the y axis> The 3 bar plots are separated by treatment and the colours indicate different behaviours. 
+
 ```{r, warning=FALSE, message=FALSE}
 behaviour_data <- heat_data %>% 
   group_by(Day, Treatment, Time_Block) %>% 
@@ -671,15 +690,5 @@ behaviour_plot <- behaviour_plot + labs(fill = "Behaviour Response")
 behaviour_plot
 
 ggsave(here("./images/behaviour_plot.png"), behaviour_plot, width = 10, height = 6)
-```
-
-Combining plots together for comparision:
-```{r}
-behaviour_heat <- behaviour_plot + heat_plot
-behaviour_heat <- behaviour_heat + plot_layout(ncol=2, widths = c(1.8,1))
-behaviour_heat <- behaviour_heat + plot_annotation(tag_levels = 'A')
-behaviour_heat
-
-ggsave(here("./images/behaviour_heat.png"), behaviour_heat, width = 10, height = 4)
 ```
 
