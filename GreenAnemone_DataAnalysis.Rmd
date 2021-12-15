@@ -3,6 +3,7 @@ title: "Data Analysis"
 author: "Joan Moreaux and Meredith Miller"
 date: "22/11/2021"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 ---
@@ -371,7 +372,7 @@ ggsave(here("./images/MI_plot.png"), MI_plot, width = 10, height = 9)
 We filter out aposymbiotic anemones. 
 
 ```{r, warning=FALSE, message=FALSE}
-# Organizing the data 
+# Organizing the data adding average and standard error Fv/Fm 
 PAM_individuals <- health_data %>% 
   filter(Green_Density > 1000 | Dino_Density > 1000) %>% 
   distinct(Species_ID)
@@ -438,7 +439,7 @@ ggsave(here("./images/PAM_over_time.png"), PAM_over_time)
 Measuring the size of the base as a proxy for weight. 
 
 ```{r, warning=FALSE, message=FALSE}
-# Organizing the data 
+# Organizing the data and adding average and standard error of base size 
 Size_Data <- health_data %>% 
   select(-c(Base_Width, Base_Length, Base_Diagonal, Nb_Tentacles, Weight_Total_g, 
             Weight_Tube_g, Weight_Tentacle_g, Weight_Tentacle_mg, Green_Cells, 
@@ -631,6 +632,7 @@ ggsave(here("./images/feeding_plot.png"), feeding_plot)
 Includes temperature during heatwave and behavioral responses (open vs closed)
 
 ```{r, warning=FALSE, message=FALSE}
+# Data reorganization, adding average temp at each hour 
 heat_data <- heat_data %>% 
   mutate(Open_Closed = as.factor(Open_Closed), Bucket = as.factor(Bucket), 
          Treatment = as.factor(Treatment), Field_Site = as.factor(Field_Site)) %>% 

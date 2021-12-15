@@ -1787,7 +1787,7 @@ exp_test(Green_Symbionts$Green_Density)         #p-value &lt; 0.05</code></pre>
 ##  Test for the Weibull distribution
 ## 
 ## data:  Green_Symbionts$Green_Density
-## p-value = 0.042</code></pre>
+## p-value = 0.048</code></pre>
 <pre class="r"><code>#Use Weibull since p value is larger than gamma
 Green_Weibull &lt;- histDist(Green_Symbionts$Green_Density, &quot;WEI&quot;, 
                           density = F, main = &quot;Weibull&quot;)</code></pre>
@@ -1824,7 +1824,7 @@ exp_test(Dino_Symbionts$Dino_Density)           #p-value &gt; 0.05</code></pre>
 ##  Test for the Weibull distribution
 ## 
 ## data:  Dino_Symbionts$Dino_Density
-## p-value = 0.964</code></pre>
+## p-value = 0.926</code></pre>
 <pre class="r"><code>#Use Gamma since p value is larger than weibull
 Dino_Gamma &lt;- histDist(Dino_Symbionts$Dino_Density, &quot;GA&quot;, 
                        density = F, main = &quot;Gamma&quot;)</code></pre>
@@ -2295,7 +2295,7 @@ MI_plot</code></pre>
 <div id="pam-data" class="section level3">
 <h3>PAM data</h3>
 <p>We filter out aposymbiotic anemones.</p>
-<pre class="r"><code># Organizing the data 
+<pre class="r"><code># Organizing the data adding average and standard error Fv/Fm 
 PAM_individuals &lt;- health_data %&gt;% 
   filter(Green_Density &gt; 1000 | Dino_Density &gt; 1000) %&gt;% 
   distinct(Species_ID)
@@ -2366,7 +2366,7 @@ PAM_over_time</code></pre>
 <div id="size-data" class="section level3">
 <h3>Size Data</h3>
 <p>Measuring the size of the base as a proxy for weight.</p>
-<pre class="r"><code># Organizing the data 
+<pre class="r"><code># Organizing the data and adding average and standard error of base size 
 Size_Data &lt;- health_data %&gt;% 
   select(-c(Base_Width, Base_Length, Base_Diagonal, Nb_Tentacles, Weight_Total_g, 
             Weight_Tube_g, Weight_Tentacle_g, Weight_Tentacle_mg, Green_Cells, 
@@ -2630,7 +2630,7 @@ Feeding_Data &lt;- health_data %&gt;%
 ##  Test for exponentiality based on a transformation to uniformity
 ## 
 ## data:  Feeding_Data$Feeding_Time_Min
-## T = 2.048, p-value = 0.006</code></pre>
+## T = 2.048, p-value = 0.01</code></pre>
 <pre class="r"><code>gamma_test(Feeding_Data$Feeding_Time_Min)          #p = 0.3717</code></pre>
 <pre><code>## 
 ##  Test of fit for the Gamma distribution
@@ -2656,7 +2656,7 @@ Feeding_Data &lt;- health_data %&gt;%
 ##  Test for the Weibull distribution
 ## 
 ## data:  Feeding_Data$Feeding_Time_Min
-## p-value = 0.136</code></pre>
+## p-value = 0.13</code></pre>
 <pre class="r"><code># Choosing the best distribution by comparing AIC value
 Feeding_lnorm &lt;- histDist(Feeding_Data$Feeding_Time_Min, &quot;LOGNO&quot;, 
                           density = T, main = &quot;lNorm&quot;) #AIC = 112.738</code></pre>
@@ -2797,7 +2797,8 @@ feeding_plot</code></pre>
 <div id="heat-data" class="section level2">
 <h2>Heat Data</h2>
 <p>Includes temperature during heatwave and behavioral responses (open vs closed)</p>
-<pre class="r"><code>heat_data &lt;- heat_data %&gt;% 
+<pre class="r"><code># Data reorganization, adding average temp at each hour 
+heat_data &lt;- heat_data %&gt;% 
   mutate(Open_Closed = as.factor(Open_Closed), Bucket = as.factor(Bucket), 
          Treatment = as.factor(Treatment), Field_Site = as.factor(Field_Site)) %&gt;% 
   mutate(Open_Closed = fct_relevel(Open_Closed, &quot;Open&quot;, &quot;Partial&quot;, &quot;Closed&quot;)) %&gt;% 
