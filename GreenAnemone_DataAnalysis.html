@@ -1625,15 +1625,10 @@ pre code {
 
 <div id="loading-library-and-data" class="section level2">
 <h2>Loading library and data</h2>
-<pre class="r"><code>library(performance)
-library(DHARMa)
-library(mgcv)
-library(fitdistrplus)
+<pre class="r"><code>library(fitdistrplus)
 library(goft)
 library(gamlss)
 library(FSA) 
-library(fGarch)
-library(LambertW)
 library(ordinal)
 library(cowplot)
 library(here)
@@ -1787,7 +1782,7 @@ exp_test(Green_Symbionts$Green_Density)         #p-value &lt; 0.05</code></pre>
 ##  Test for the Weibull distribution
 ## 
 ## data:  Green_Symbionts$Green_Density
-## p-value = 0.048</code></pre>
+## p-value = 0.038</code></pre>
 <pre class="r"><code>#Use Weibull since p value is larger than gamma
 Green_Weibull &lt;- histDist(Green_Symbionts$Green_Density, &quot;WEI&quot;, 
                           density = F, main = &quot;Weibull&quot;)</code></pre>
@@ -1798,7 +1793,7 @@ exp_test(Dino_Symbionts$Dino_Density)           #p-value &gt; 0.05</code></pre>
 ##  Test for exponentiality based on a transformation to uniformity
 ## 
 ## data:  Dino_Symbionts$Dino_Density
-## T = 2.6262, p-value = 0.002</code></pre>
+## T = 2.6262, p-value &lt; 2.2e-16</code></pre>
 <pre class="r"><code>gamma_test(Dino_Symbionts$Dino_Density)         #p = 0.6709</code></pre>
 <pre><code>## 
 ##  Test of fit for the Gamma distribution
@@ -1824,7 +1819,7 @@ exp_test(Dino_Symbionts$Dino_Density)           #p-value &gt; 0.05</code></pre>
 ##  Test for the Weibull distribution
 ## 
 ## data:  Dino_Symbionts$Dino_Density
-## p-value = 0.926</code></pre>
+## p-value = 0.848</code></pre>
 <pre class="r"><code>#Use Gamma since p value is larger than weibull
 Dino_Gamma &lt;- histDist(Dino_Symbionts$Dino_Density, &quot;GA&quot;, 
                        density = F, main = &quot;Gamma&quot;)</code></pre>
@@ -2630,7 +2625,7 @@ Feeding_Data &lt;- health_data %&gt;%
 ##  Test for exponentiality based on a transformation to uniformity
 ## 
 ## data:  Feeding_Data$Feeding_Time_Min
-## T = 2.048, p-value = 0.01</code></pre>
+## T = 2.048, p-value = 0.002</code></pre>
 <pre class="r"><code>gamma_test(Feeding_Data$Feeding_Time_Min)          #p = 0.3717</code></pre>
 <pre><code>## 
 ##  Test of fit for the Gamma distribution
@@ -2656,7 +2651,7 @@ Feeding_Data &lt;- health_data %&gt;%
 ##  Test for the Weibull distribution
 ## 
 ## data:  Feeding_Data$Feeding_Time_Min
-## p-value = 0.13</code></pre>
+## p-value = 0.104</code></pre>
 <pre class="r"><code># Choosing the best distribution by comparing AIC value
 Feeding_lnorm &lt;- histDist(Feeding_Data$Feeding_Time_Min, &quot;LOGNO&quot;, 
                           density = T, main = &quot;lNorm&quot;) #AIC = 112.738</code></pre>
