@@ -8,9 +8,21 @@ Joan Moreaux (Undergraduate Student, University of British Columbia (UBC), joan.
 
 Project Description:
 
-Undergraduate directed studies looking at the effects of short-term heat waves on the giant green anemone *Anthopleura xanthogrammica*. All lab and field work was completed at the Bamfield Marine Sciences Centre in Bamfield, BC. 
+Undergraduate directed studies looking at the effects of short-term heat waves on the giant green anemone *Anthopleura xanthogrammica*. All lab and field work was completed at the Bamfield Marine Sciences Centre in Bamfield, BC, on the traditional territory of the Huu-ay-aht First Nations. 
 
-This repositroy includes datasets and working files for analysis on experiments and observations made at the Bamfield Marine Sciences Centre. GreenAnemone_DataAnalysis contains all data analysis completed for this project, and can also be viewed as an HTML file (GreenAnemone_DataAnalysis.html) or as a PDF (GreenAnemone_DataAnalysis.pdf). The data folder contains all raw data required to run the code, and also contains an excel sheet with metadata. The images folder contains images of all figures created in GreenAnemone_DataAnalysis, and also contains a graphical abstract (created in BioRender) of the overall project, as seen below.
+## Navigating the repository
+
+### Code Folder
+This repositroy includes datasets and working files for analysis on experiments and observations made at the Bamfield Marine Sciences Centre. The code folder contains "GreenAnemone_DataAnalysis.Rmd", which includes the code for all data analysis completed for this project, and can also be viewed as an HTML file (GreenAnemone_DataAnalysis.html) or as a PDF (GreenAnemone_DataAnalysis.pdf). This folder also contains the raw data required to run the code. 
+
+### Graphical Abstract 
+The graphical abstrat folder contains an image of the graphical abstract, which can also be seen at the bottom of this README.
+
+### Data Folder
+The data folder contains a copy of all raw data required to run the code, and also contains an excel sheet with metadata. 
+
+### Images Folder
+The images folder contains images of all figures created in GreenAnemone_DataAnalysis.Rmd. 
 
 <p align="center">
 <img width="594" alt="GreenAnemone_GraphicalAbstract.png" src="https://github.com/meredithyvr/Green_Anemone/blob/main/graphical%20abstract/GreenAnemone_GraphicalAbstract.png">
