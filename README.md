@@ -25,7 +25,7 @@ The data folder contains a copy of all raw data required to run the code, and al
 ### Images Folder
 The images folder contains images of all figures created in GreenAnemone_DataAnalysis.Rmd. 
 
-## Paper Folder
+### Paper Folder
 This folder contains the final paper on our project. "The effects of climate change on marine symbiosis in *Anthopleura xanthogrammica*."
 
 <p align="center">
