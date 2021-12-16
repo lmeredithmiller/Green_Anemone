@@ -1,12 +1,12 @@
 # Green Anemone
 
-Authors: 
+### Authors
 
 Meredith Miller (Undergraduate Student, Simon Fraser University (SFU), lmm23@sfu.ca)
 
 Joan Moreaux (Undergraduate Student, University of British Columbia (UBC), joan.moreaux@gmail.com)
 
-Project Description:
+### Project Description
 
 Undergraduate directed studies looking at the effects of short-term heat waves on the giant green anemone *Anthopleura xanthogrammica*. All lab and field work was completed at the Bamfield Marine Sciences Centre in Bamfield, BC, on the traditional territory of the Huu-ay-aht First Nations. 
 
